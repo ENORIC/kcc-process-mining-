@@ -10,6 +10,7 @@ import os
 import sys
 import json
 import joblib
+import numpy as np
 import pandas as pd
 import networkx as nx
 import plotly.express as px
@@ -230,15 +231,14 @@ app.layout = html.Div(style={
                   "is disclosed in the report rather than hidden. Hover over any box or arrow for the "
                   "exact numbers behind it.",
                   style={"color": COLORS["muted"], "fontSize": "13px", "marginBottom": "14px"}),
-        dcc.RadioItems(
+        dcc.Dropdown(
             id="map-toggle",
             options=[
-                {"label": " Simple map (recommended — interactive, call-frequency flow)", "value": "dfg"},
-                {"label": " Formal process model (Inductive Miner Petri net)", "value": "petri"},
+                {"label": "Simple map (recommended — interactive, call-frequency flow)", "value": "dfg"},
+                {"label": "Formal process model (Inductive Miner Petri net)", "value": "petri"},
             ],
-            value="dfg", inline=False,
-            style={"marginBottom": "14px", "color": COLORS["text"], "fontSize": "14px"},
-            labelStyle={"display": "block", "marginBottom": "4px"},
+            value="dfg", clearable=False,
+            style={"marginBottom": "14px", "fontSize": "14px", "maxWidth": "480px"},
         ),
         html.Div(id="process-map-note", style={"color": COLORS["muted"], "fontSize": "13px",
                                                  "marginBottom": "10px"}),
@@ -844,6 +844,58 @@ def update_case_explorer(case_id):
     return stats, fig, detail.to_dict("records"), detail_cols
 
 
+def _prediction_card(label, value, confidence=None):
+    conf_bar = None
+    if confidence is not None:
+        pct = f"{confidence * 100:.0f}%"
+        conf_bar = html.Div([
+            html.Div(style={"width": f"{confidence * 100:.0f}%", "height": "6px",
+                             "backgroundColor": COLORS["accent"], "borderRadius": "3px"}),
+        ], style={"width": "100%", "height": "6px", "backgroundColor": COLORS["border"],
+                   "borderRadius": "3px", "marginTop": "8px"})
+        conf_label = html.Div(f"Model confidence: {pct}", style={"fontSize": "11px",
+                               "color": COLORS["muted"], "marginTop": "4px"})
+    fig_children = [
+        html.Div(label, style={"fontSize": "12px", "color": COLORS["muted"], "fontWeight": "600",
+                                "textTransform": "uppercase", "letterSpacing": "0.5px"}),
+        html.Div(value, style={"fontSize": "20px", "fontWeight": "800", "color": COLORS["text"],
+                                "marginTop": "4px"}),
+    ]
+    if conf_bar is not None:
+        fig_children += [conf_bar, conf_label]
+    return html.Div(fig_children, style={**CARD_STYLE, "padding": "14px 16px", "flex": "1", "minWidth": "180px"})
+
+
+def _predict_with_confidence(clf, text):
+    """Same hierarchical prediction as HierarchicalClassifier.predict(), plus a
+    relative-confidence readout for the category stage using the linear SVM's
+    decision margin (softmax-normalized) -- NOT a calibrated probability, so
+    it's labeled "model confidence" rather than a percentage-likelihood claim.
+    Query-type confidence is skipped: several per-category sub-classifiers are
+    binary (decision_function returns a single scalar, not one score per
+    class, in that case) or a plain majority-class fallback with no model at
+    all, and handling every one of those shapes correctly isn't worth the risk
+    this close to a deadline for a secondary readout.
+    """
+    Xc = clf.category_vectorizer.transform([text])
+    cat_scores = clf.category_clf.decision_function(Xc)[0]
+    cat_classes = clf.category_clf.classes_
+    exp_scores = np.exp(cat_scores - np.max(cat_scores))
+    cat_probs = exp_scores / exp_scores.sum()
+    best_i = int(np.argmax(cat_probs))
+    pred_cat = cat_classes[best_i]
+    cat_confidence = float(cat_probs[best_i])
+
+    vec = clf.querytype_vectorizers.get(pred_cat)
+    sub_clf = clf.querytype_clfs.get(pred_cat)
+    if vec is None:
+        pred_qtype = sub_clf if isinstance(sub_clf, str) else "UNKNOWN"
+    else:
+        Xq = vec.transform([text])
+        pred_qtype = sub_clf.predict(Xq)[0]
+    return pred_cat, cat_confidence, pred_qtype
+
+
 @app.callback(
     Output("live-query-result", "children"),
     Output("live-query-similar", "data"),
@@ -856,11 +908,11 @@ def live_query_demo(text):
     if classifier is None:
         return "Baseline classifier not found — run src/baseline_classifier.py first.", [], []
 
-    pred_cat, pred_qtype = classifier.predict([text])
+    pred_cat, cat_confidence, pred_qtype = _predict_with_confidence(classifier, text)
     result = html.Div([
-        html.Div([html.B("Predicted category: "), pred_cat[0]]),
-        html.Div([html.B("Predicted query type: "), pred_qtype[0]], style={"marginTop": "6px"}),
-    ])
+        _prediction_card("Predicted category", pred_cat, confidence=cat_confidence),
+        _prediction_card("Predicted query type", pred_qtype),
+    ], style={"display": "flex", "gap": "12px", "flexWrap": "wrap"})
 
     similar = retriever.query(text, k=5)
     similar = similar[similar["similarity"] > 0.03]  # drop near-zero matches -- not actually similar
