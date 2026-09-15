@@ -9,8 +9,6 @@ Run: python dashboard/app.py   (then open http://127.0.0.1:8050)
 import os
 import sys
 import json
-import base64
-import tempfile
 import joblib
 import pandas as pd
 import networkx as nx
@@ -21,7 +19,7 @@ from dash import Dash, dcc, html, Input, Output, dash_table
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 from baseline_classifier import HierarchicalClassifier  # noqa: E402 -- needed for joblib.load to resolve the class
 from event_log import (build_event_log_df, discover_model,  # noqa: E402
-                        export_process_map, discover_dfg_data)
+                        discover_dfg_data, extract_petri_layout)
 from retrieval import TfidfRetriever  # noqa: E402 -- sklearn only, no torch/HF download needed
 
 BASE = os.path.join(os.path.dirname(__file__), "..")
@@ -249,7 +247,7 @@ app.layout = html.Div(style={
             dcc.Graph(id="process-map-interactive", config={"displayModeBar": False}),
         ]),
         html.Div(id="process-map-petri-wrapper", children=[
-            html.Img(id="process-map", style={"width": "100%", "borderRadius": "8px"}),
+            dcc.Graph(id="process-map-petri-graph", config={"displayModeBar": False}),
         ]),
     ]),
 
@@ -436,11 +434,6 @@ def update_dashboard(crops):
     return kpis, fig, note, table_data, table_cols
 
 
-def _encode_png(path):
-    with open(path, "rb") as f:
-        return f"data:image/png;base64,{base64.b64encode(f.read()).decode()}"
-
-
 def _wrap_label(name, max_len=16):
     """Break a long issue-type name onto two lines at the nearest space to
     the middle, so it doesn't get clipped or run into neighboring nodes."""
@@ -557,15 +550,108 @@ def build_dfg_figure(dfg, start_activities, end_activities, node_totals):
     return fig
 
 
+def build_petri_figure(nodes, edges):
+    """Interactive version of the formal Petri net, positioned using
+    graphviz's own `dot` layout (see extract_petri_layout) rather than a
+    from-scratch layout -- `dot` already does a good job of laying out a
+    left-to-right control-flow diagram, so there's no reason to reinvent it.
+    Circles are places, squares are transitions (black = silent/routing
+    only, colored = an actual call category), matching the shape key.
+    """
+    xs = [n["x"] for n in nodes.values()]
+    ys = [n["y"] for n in nodes.values()]
+    x_pad = max((max(xs) - min(xs)) * 0.06, 0.8) if xs else 1
+    y_pad = max((max(ys) - min(ys)) * 0.15, 0.8) if ys else 1
+
+    x_range = [min(xs) - x_pad, max(xs) + x_pad] if xs else [-1, 1]
+    y_range = [min(ys) - y_pad, max(ys) + y_pad] if ys else [-1, 1]
+    aspect = (x_range[1] - x_range[0]) / max(y_range[1] - y_range[0], 0.1)
+    height = int(max(320, min(620, 900 / max(aspect, 1))))
+    # px-per-data-unit on the y axis, so the label offset below a transition
+    # box is calibrated to actually clear the marker (half its pixel size,
+    # plus a small gap) regardless of how tall/dense this particular subset's
+    # graph is -- a fixed multiple of y_pad overcorrected on dense graphs
+    px_per_unit_y = height / (y_range[1] - y_range[0])
+    label_offset = (26 / 2 + 9) / px_per_unit_y
+
+    fig = go.Figure()
+    annotations = []
+    for a, b in edges:
+        if a not in nodes or b not in nodes:
+            continue
+        na, nb = nodes[a], nodes[b]
+        annotations.append(dict(
+            x=nb["x"], y=nb["y"], ax=na["x"], ay=na["y"], xref="x", yref="y", axref="x", ayref="y",
+            showarrow=True, arrowhead=2, arrowsize=1, arrowwidth=1.4,
+            arrowcolor=COLORS["muted"], standoff=16, startstandoff=16, opacity=0.7,
+        ))
+
+    silent = [n for n in nodes.values() if n["kind"] == "transition" and n["is_silent"]]
+    labeled = [n for n in nodes.values() if n["kind"] == "transition" and not n["is_silent"]]
+    start_p = [n for n in nodes.values() if n["kind"] == "place" and n["is_start"]]
+    end_p = [n for n in nodes.values() if n["kind"] == "place" and n["is_end"]]
+    plain_p = [n for n in nodes.values() if n["kind"] == "place" and not n["is_start"] and not n["is_end"]]
+
+    def add_group(group, size, color, symbol, text=None, textcolor="white", hover_fn=None):
+        if not group:
+            return
+        fig.add_trace(go.Scatter(
+            x=[n["x"] for n in group], y=[n["y"] for n in group],
+            mode="markers+text" if text else "markers",
+            text=text, textposition="middle center", textfont=dict(size=11, color=textcolor),
+            marker=dict(size=size, color=color, symbol=symbol, line=dict(width=1.5, color=COLORS["muted"])),
+            hovertext=[hover_fn(n) for n in group] if hover_fn else None,
+            hoverinfo="text" if hover_fn else "skip", showlegend=False,
+        ))
+
+    add_group(plain_p, 14, "white", "circle",
+              hover_fn=lambda n: "Waiting point between steps — not a real event, "
+                                  "just formal bookkeeping the algorithm needs.")
+    add_group(start_p, 24, COLORS["accent"], "circle", text=["S"] * len(start_p),
+              hover_fn=lambda n: "Start of the process (initial marking).")
+    add_group(end_p, 26, COLORS["text"], "circle", text=["E"] * len(end_p),
+              hover_fn=lambda n: "End of the process (final marking).")
+    add_group(silent, 13, "black", "square",
+              hover_fn=lambda n: "Silent step — routing logic the miner needs, not an actual call.")
+
+    if labeled:
+        fig.add_trace(go.Scatter(
+            x=[n["x"] for n in labeled], y=[n["y"] for n in labeled], mode="markers",
+            marker=dict(size=26, color=COLORS["accent"], symbol="square",
+                        line=dict(width=1.5, color=COLORS["muted"])),
+            hovertext=[f"<b>{n['label']}</b><br>An actual call in this flow." for n in labeled],
+            hoverinfo="text", showlegend=False,
+        ))
+        label_y = [n["y"] - label_offset for n in labeled]
+        fig.add_trace(go.Scatter(
+            x=[n["x"] for n in labeled], y=label_y, mode="text",
+            text=[_wrap_label(n["label"], max_len=14) for n in labeled],
+            textposition="bottom center", textfont=dict(size=11, color=COLORS["text"]),
+            hoverinfo="skip", showlegend=False,
+        ))
+
+    fig.update_layout(
+        annotations=annotations, showlegend=False, height=height,
+        margin=dict(l=20, r=20, t=20, b=50), plot_bgcolor="white", paper_bgcolor="white",
+        xaxis=dict(visible=False, range=x_range),
+        yaxis=dict(visible=False, range=y_range, scaleanchor="x", scaleratio=1),
+        hovermode="closest",
+    )
+    return fig
+
+
 PETRI_LEGEND = html.Div([
-    html.Div("Shape key (this is formal notation, not the recommended view):",
+    html.Div("Shape key (this is formal notation, not the recommended view — hover any shape for detail):",
              style={"fontWeight": "700", "fontSize": "13px", "marginBottom": "6px", "color": COLORS["text"]}),
     html.Ul([
-        html.Li([html.B("Circle with a black dot: "), "the process starts here."]),
-        html.Li([html.B("Solid black rectangle: "), "an actual call category happening (a \"transition\")."]),
+        html.Li([html.B("Circle marked \"S\": "), "the process starts here (the initial marking)."]),
+        html.Li([html.B("Colored square: "), "an actual call category happening (a \"transition\") — "
+                 "the name is labeled underneath it."]),
+        html.Li([html.B("Solid black square: "), "a silent step — routing logic the miner needs to "
+                 "represent choice/parallelism, not an actual call."]),
         html.Li([html.B("Plain empty circle: "), "a waiting point between steps — not a real event itself, "
                  "just formal bookkeeping the algorithm needs."]),
-        html.Li([html.B("Double circle with a black square: "), "the process ends here."]),
+        html.Li([html.B("Circle marked \"E\": "), "the process ends here (the final marking)."]),
     ], style={"fontSize": "13px", "color": COLORS["muted"], "lineHeight": "1.7", "marginBottom": "12px"}),
 ], style={"backgroundColor": COLORS["bg"], "border": f"1px dashed {COLORS['border']}",
           "borderRadius": "8px", "padding": "12px 16px", "marginBottom": "12px"})
@@ -576,8 +662,8 @@ DFG_HIDDEN = {"display": "none"}
 
 
 @app.callback(
-    Output("process-map", "src"),
     Output("process-map-interactive", "figure"),
+    Output("process-map-petri-graph", "figure"),
     Output("process-map-dfg-wrapper", "style"),
     Output("process-map-petri-wrapper", "style"),
     Output("process-map-note", "children"),
@@ -593,10 +679,11 @@ def update_process_map(which, crops):
     empty_fig.update_layout(height=200, plot_bgcolor="white", paper_bgcolor="white")
 
     # Both views are generated live from the current data every time this
-    # callback fires -- no pre-rendered picture, cached or otherwise. Timed
-    # this at ~0.3s for the Petri net and well under that for the DFG even
-    # on the full unfiltered dataset (6570 calls), so there's no need for a
-    # cached shortcut on the "no filter" case.
+    # callback fires -- no pre-rendered picture, cached or otherwise, and
+    # neither is a flat image anymore: both render as hoverable Plotly
+    # figures built straight from what pm4py just discovered. Timed this at
+    # ~0.3s for the Petri net and well under that for the DFG even on the
+    # full unfiltered dataset (6570 calls), so no cached shortcut is needed.
     if not crops:
         subset = raw_df
     else:
@@ -609,7 +696,7 @@ def update_process_map(which, crops):
         note = (f"Only {n_calls} call{'s' if n_calls != 1 else ''} for this selection — there's no "
                  f"call-to-call transition to draw a flow from. See the KPI tiles and case explorer "
                  f"above for what that one call actually was.")
-        return "", empty_fig, dfg_style, petri_style, note, None
+        return empty_fig, empty_fig, dfg_style, petri_style, note, None
 
     log_df = build_event_log_df(subset, activity_col=ACTIVITY_COL, date_col="CreatedOn")
     note = (f"Auto-generated live from {n_calls} calls across {n_cases} case(s) — every crop, full "
@@ -620,25 +707,25 @@ def update_process_map(which, crops):
         try:
             dfg, starts, ends, totals = discover_dfg_data(log_df)
             fig = build_dfg_figure(dfg, starts, ends, totals)
-            return "", fig, dfg_style, petri_style, note, legend
+            return fig, empty_fig, dfg_style, petri_style, note, legend
         except Exception:
             note = (f"Couldn't build a process diagram from this selection ({n_calls} calls, "
                      f"{n_cases} case(s)) — too little structure for the miner to draw a flow from. "
                      f"Try a broader crop selection.")
-            return "", empty_fig, dfg_style, petri_style, note, None
+            return empty_fig, empty_fig, dfg_style, petri_style, note, None
 
-    # Petri net view -- always mined fresh from log_df, never a static file
-    with tempfile.TemporaryDirectory() as tmp:
-        tmp_path = os.path.join(tmp, "map.png")
-        try:
-            _, _, net, im, fm = discover_model(log_df)
-            export_process_map(net, im, fm, out_path=tmp_path)
-            return _encode_png(tmp_path), empty_fig, dfg_style, petri_style, note, legend
-        except Exception:
-            note = (f"Couldn't build a process diagram from this selection ({n_calls} calls, "
-                     f"{n_cases} case(s)) — too little structure for the miner to draw a flow from. "
-                     f"Try a broader crop selection.")
-            return "", empty_fig, dfg_style, petri_style, note, None
+    # Petri net view -- always mined fresh from log_df, rendered as an
+    # interactive figure (see build_petri_figure), never a static file
+    try:
+        _, _, net, im, fm = discover_model(log_df)
+        nodes, edges = extract_petri_layout(net, im, fm)
+        fig = build_petri_figure(nodes, edges)
+        return empty_fig, fig, dfg_style, petri_style, note, legend
+    except Exception:
+        note = (f"Couldn't build a process diagram from this selection ({n_calls} calls, "
+                 f"{n_cases} case(s)) — too little structure for the miner to draw a flow from. "
+                 f"Try a broader crop selection.")
+        return empty_fig, empty_fig, dfg_style, petri_style, note, None
 
 
 @app.callback(
