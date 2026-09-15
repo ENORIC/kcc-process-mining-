@@ -1,63 +1,186 @@
-# Semantic-Aware LLM Process Mining Advisory Workflow (KCC)
+This is the Final Module Project for **B198 – AI Applications for Digital Business**
 
-## STATUS as of Sept 15 -- real results already in hand, read this first
+## Semantic-Aware LLM Process Mining Advisory Workflow
+- Detecting Repeat-Issue Loops and Answer-Quality Gaps in India's Kisan Call Centre (Kerala, 2024)
+- By — Enosh Paul Niju GH1026595
 
-Real data: Kerala, 2024, downloaded via data.gov.in's Data tab (no API needed).
-26,601 raw records -> 6,570 after cleaning (dropped admin queries like
-"Government Schemes"/"Training", dropped Malayalam-script answers -- see
-"Honest deviations" below for why).
+My initial motivation for this project was curiosity about what actually happens after a
+farmer calls a government helpline for advice — not just what they ask, but what happens
+next. Does the same farmer call back with the same problem again? Does the advice given
+actually match the question that was asked? And can a machine reliably tell what *kind* of
+problem it even was, well enough to trust it as the input to the next layer of analysis?
 
-**Already done, with real numbers:**
-- Baseline classifier (RQ1, path A): Category accuracy 86.3% (F1 macro 0.70),
-  QueryType accuracy 75.8% (F1 macro 0.29 -- expected, 42 imbalanced classes).
-  See `outputs/baseline_classifier_metrics.json`.
-- Event log + process mining (RQ2): 711 cases (district+crop), mean loop rate
-  0.28, 343/711 cases show repeat-issue looping. **Coconut (0.86) and Banana
-  (0.85) have the highest loop rates** among crops with meaningful volume --
-  this is a real, reportable finding. See `outputs/summary_by_crop.csv`,
-  `outputs/process_model.png` (filtered to top-8 activities + top-15 variants
-  for legibility -- the unfiltered model is an unreadable spaghetti graph,
-  worth mentioning honestly rather than claiming Inductive Miner is
-  automatically readable at this activity count).
-- Semantic mismatch, lexical fallback: flags 94.8% of records as mismatches
-  -- confirms (again, now on real data) that surface lexical overlap can't
-  tell good agronomic answers from bad ones, which is the actual
-  justification for why RQ3 needs real NLI, not a failure.
-- Dashboard: boots and renders correctly against real outputs. Live query
-  demo tested: "coconut tree leaves turning yellow, what fertilizer should
-  I use" -> correctly predicts Category=Plantation Crops, QueryType=Nutrient
-  Management.
-- Gold set sampled: `data/gold/gold_set_to_label.csv`, 60 records, pre-filled
-  with existing labels -- **you need to hand-verify these** (see step 3).
+The core question driving this project: **can a text-classification layer, a process-mining
+layer, and a semantic-matching layer, stacked together, reveal breakdowns in an advisory
+service that no single one of those methods would catch on its own?**
 
-**Still needs you, specifically:**
-1. Hand-label `data/gold/gold_set_to_label.csv` (60 records) -- read each
-   query+answer, correct `Category_verified`/`QueryType_verified` where
-   wrong, fill in `resolution_signal_verified`. Then run
-   `python src/build_gold_set.py merge`.
-2. Run the real LLM extraction via Ollama (RQ1, path B) -- this has to run
-   on your machine, model's already pulled:
-   ```
-   python src/llm_extraction.py --input data/processed/kcc_clean.csv --model qwen2.5:7b-instruct --n 200
-   python src/llm_extraction.py --consistency-check --model qwen2.5:7b-instruct
-   ```
-   Compare accuracy against `data/gold/gold_set_final.csv` -- this comparison
-   IS your RQ1 answer.
-3. (Optional, if time) Real NLI semantic mismatch instead of the lexical
-   fallback: `python src/semantic_mismatch.py --backend nli`
-4. Write up the report using the numbers above plus whatever your LLM
-   extraction run adds.
+This project is entirely focused on data analysis and applied NLP/process mining, built on
+real operational data from Kerala's Kisan Call Centre — 26,601 raw farmer call records from
+2024, cleaned down to 6,570 usable records — which made it a genuine dataset to explore
+where an advisory pipeline like this earns trust, and where it quietly doesn't.
 
+## Data Source
+*Dataset:* Kisan Call Centre (KCC) Farmer Query Data, Kerala
+*Source:* https://data.gov.in
 
-Built under a hard deadline (submission 17th) — this README is the exact
-runbook to go from zero to a working demo on YOUR machine. Everything here
-was developed and unit-tested against a synthetic stand-in dataset
-(`data/raw/kcc_synthetic.csv`, schema-matched to the real KCC columns) in an
-environment with no internet access to data.gov.in / Ollama / HuggingFace.
-The real run happens on your machine, where all three are reachable.
+*Live dashboard link: -->*
+https://kcc-process-mining.onrender.com
 
-## 0. One-time setup
+- Raw export: `data/raw/kcc_kerala_2024.csv`
+- Cleaned records: `data/processed/kcc_clean.csv` (6,570 records after cleaning)
+- Hand-labeled gold evaluation set: `data/gold/gold_set_final.csv`
+- Trained baseline classifier: `models/baseline_classifier.joblib`
 
+The data was scoped specifically to Kerala for the year 2024 — a deliberate choice for
+analytical completeness rather than one made from convenience. Purely administrative
+queries (e.g. "Government Schemes," "Training") were dropped during cleaning, since they
+are access-to-service questions rather than the agronomic problems the process-mining and
+semantic-matching layers are built to evaluate, and records with Malayalam-script answers
+were dropped so the classifier and semantic-mismatch layers work against one consistent
+language throughout.
+
+## Code Documentation
+
+Every file under `src/` and `dashboard/app.py` is annotated throughout with `#` comments.
+Each comment block explains which functions/components are being used in that section and
+what it produces.
+
+## Table of Contents
+- Overview
+- RQ1 — Text Intelligence: Baseline TF-IDF/SVM Classifier vs. LLM Structured Extraction
+- RQ2 — Process Mining: Case Construction, Repeat-Issue Loop Rates & Crop-Level Patterns
+- RQ3 — Semantic Mismatch: Does the Answer Given Actually Match the Question Asked?
+- Interactive Process Explorer — Directly-Follows Graph & Formal (Petri Net) Process Model
+- Live Classifier + Retrieval Demo
+- Honest Deviations From the Original Proposal
+- Project Structure & How to Run It Locally
+
+## Tools Used
+
+- **Python / Dash — dashboard framework**
+- **Pandas — data loading, cleaning and preprocessing**
+- **scikit-learn — TF-IDF + Linear SVM hierarchical baseline classifier**
+- **PM4Py — event log construction, Inductive Miner, process mining metrics**
+- **Ollama (qwen2.5:7b-instruct) — LLM-based structured extraction**
+- **Plotly — interactive process map and Petri net visualisations**
+- **Graphviz — process model layout engine (reused for the interactive Petri net)**
+- **Sentence embeddings / TF-IDF retrieval — similar-past-query lookup in the live demo**
+
+---
+
+## Overview
+
+Three layers, stacked:
+
+1. **Text Intelligence (RQ1)** — every raw farmer query is sorted into a structured
+   `Category` and `QueryType` two ways: a hierarchical TF-IDF + Linear SVM baseline
+   classifier, and an LLM-based structured extraction pipeline (Ollama, local). Both are
+   evaluated against a hand-labeled gold set; whichever wins feeds the event log below.
+2. **Process Mining (RQ2)** — each farmer's sequence of calls (grouped by district + crop)
+   is treated as a process-mining "case" and mined with PM4Py's Inductive Miner. This
+   surfaces repeat-issue loops: cases where the same type of problem keeps recurring,
+   which is a proxy for advice that didn't actually resolve anything the first time.
+3. **Semantic Mismatch (RQ3)** — a separate check on whether the answer KCC gave actually
+   addresses the question asked, independent of whether the query was correctly
+   categorised. A lexical-overlap fallback and a proper NLI (entailment) backend are both
+   implemented; see "Honest deviations" below for why the lexical version alone
+   undersells this layer.
+
+The dashboard (`dashboard/app.py`) brings all three together: a process explorer with a
+live-generated, fully interactive directly-follows graph and Petri net (switchable via
+dropdown), crop/case filtering, and a live classifier + retrieval demo where you can type
+a farmer-style query and see the predicted category/query type alongside real past KCC
+answers to similar questions.
+
+**Note on the numbers below:** the baseline classifier was retuned during development
+(`sublinear_tf=True`, `min_df=2`, `C=2.0`, tuned via a validation split carved from the
+training data only — the gold set was never touched during tuning). The category/query-type
+accuracy figures against the real gold set should be regenerated by re-running
+`python src/evaluate_pipelines.py` after retraining, so the numbers reported in the final
+write-up reflect the retuned model rather than an earlier run.
+
+## RQ1 — Text Intelligence
+
+```bash
+python src/baseline_classifier.py
+python src/llm_extraction.py --input data/processed/kcc_clean.csv --model qwen2.5:7b-instruct
+python src/llm_extraction.py --consistency-check --model qwen2.5:7b-instruct
+python src/evaluate_pipelines.py
+```
+Compares the baseline classifier and the LLM extraction against
+`data/gold/gold_set_final.csv`. Whichever scores higher per-level (accuracy/F1) is the
+column used as `--activity-col` in step 2 below — this comparison is the answer to RQ1.
+
+## RQ2 — Process Mining
+
+```bash
+python src/event_log.py --input data/processed/kcc_clean.csv --activity-col Category
+```
+Look at `outputs/summary_by_crop.csv` for loop rate and case duration by crop. This is
+where the crop-level repeat-issue finding comes from.
+
+## RQ3 — Semantic Mismatch
+
+```bash
+python src/semantic_mismatch.py --backend nli --input data/processed/kcc_clean.csv
+```
+Cross-reference `outputs/semantic_mismatch.csv`'s flagged rate against the RQ2 loop rate —
+do crops/categories with high semantic-mismatch rates also show high loop rates, or are
+they catching different problems? That comparison is the answer to RQ3.
+
+## Interactive Process Explorer & Live Classifier Demo
+
+```bash
+python dashboard/app.py
+```
+Open http://127.0.0.1:8050. The process map view defaults to a simple, always-interactive
+directly-follows graph; a dropdown switches to the formal Inductive-Miner Petri net, also
+fully interactive (built by reusing Graphviz's own layout engine rather than a hand-rolled
+one). The live classifier demo at the bottom predicts a category/query type for anything
+you type, with a confidence readout for the category stage, plus the five most similar
+real past KCC queries and the real answers actually given to them.
+
+## Honest deviations from the original proposal
+
+1. **Label clustering backend**: proposal specified sentence-transformer embeddings for
+   merging near-duplicate `QueryType` labels. The dev environment couldn't reach
+   HuggingFace, so `data_cleaning.py` defaults to TF-IDF character-similarity clustering
+   instead — works everywhere, no external download. Functionally similar for
+   near-duplicate *spelling* variants; weaker on true paraphrases.
+2. **Semantic mismatch backend**: `semantic_mismatch.py` ships both a TF-IDF lexical
+   fallback and the real NLI implementation. The lexical version alone flags the large
+   majority of records as mismatches, because good agronomic answers simply don't share
+   vocabulary with the problem description — a useful, citable justification for why
+   entailment (not surface overlap) is the right tool for RQ3, not a failure of the method.
+3. **Case-ID limitation**: `district + crop` is not a real farmer identity — the "loop
+   rate" measures repeated issue-categories within a district+crop bucket over time, which
+   conflates different farmers who happen to share a crop and district. Worth a
+   sensitivity note in the report: a tighter case window (e.g. same month) as a robustness
+   check, if time allows.
+4. **Gold set size**: sampled and hand-labeled at a scale set by the compressed timeline —
+   disclose the exact number used as a scoping decision in the write-up.
+
+## Project Structure & How to Run It Locally
+
+```
+src/
+  fetch_kcc_data.py         # pulls real data via your data.gov.in API key
+  data_cleaning.py          # clean, scope, merge near-duplicate labels
+  build_gold_set.py         # sample + merge hand-labeled gold set
+  baseline_classifier.py    # RQ1, path A: hierarchical TF-IDF + Linear SVM
+  llm_extraction.py         # RQ1, path B: Ollama structured extraction
+  evaluate_pipelines.py     # RQ1: compares both paths against the gold set
+  retrieval.py              # secondary: similar-past-query retrieval
+  event_log.py              # RQ2: PM4Py event log + Inductive Miner + metrics
+  semantic_mismatch.py      # RQ3: NLI-based query-answer mismatch detection
+dashboard/
+  app.py                    # Layer 3: interactive Dash dashboard
+data/                        # raw, processed, gold (gitignored except synthetic)
+outputs/                     # metrics, csvs, process map exports
+models/                      # trained baseline classifier
+```
+
+One-time setup:
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate        # Windows: .venv\Scripts\activate
@@ -65,143 +188,8 @@ pip install -r requirements.txt
 brew install graphviz            # or: apt-get install graphviz on Linux
 ```
 
-Put your data.gov.in API key in a local `.env` file (never commit this):
-```
-KCC_API_KEY=your-key-here
-```
-
-Install Ollama and pull a model:
+Ollama, for the LLM-extraction path:
 ```bash
 brew install ollama              # or download from ollama.com
-ollama pull qwen2.5:7b-instruct  # or a smaller/faster model if this is too slow on your machine
-```
-
-## 1. Get the real data
-
-```bash
-python src/fetch_kcc_data.py --test
-```
-Run this FIRST and check the printed field names against `REQUIRED_COLUMNS`
-in `src/data_cleaning.py` (line ~15) — the real API may use slightly
-different column names than assumed. Fix the mapping there if needed, then:
-
-```bash
-python src/fetch_kcc_data.py --limit 20000 --out data/raw/kcc_real.csv
-```
-
-If the API turns out to be slow/limited, the Kaggle dataset
-"Farmers Call Query (KCC) Data" (daskoushik/farmers-call-query-data-qa) is
-the same underlying government data, pre-packaged — a fine substitute,
-just note it in the report as the actual data source used.
-
-## 2. Clean + scope the data
-
-```bash
-python src/data_cleaning.py --raw data/raw/kcc_real.csv --out data/processed/kcc_clean.csv \
-    --states "RAJASTHAN" "UTTAR PRADESH" --crops "Cotton" "Wheat" "Mustard"
-```
-Adjust `--states`/`--crops` to whatever you scoped in the proposal. Check the
-printed record counts at each stage — if scoping leaves too few records
-(< a few hundred), widen it.
-
-## 3. Build the gold-labeled evaluation set
-
-```bash
-python src/build_gold_set.py sample --n 100
-```
-Open `data/gold/gold_set_to_label.csv`, correct the `*_verified` columns
-where the pre-filled (noisy) label is wrong, and fill in
-`resolution_signal_verified` (resolved / unresolved / unclear) for each row
-by actually reading the query+answer. Then:
-```bash
-python src/build_gold_set.py merge
-```
-
-## 4. Layer 1 — Text Intelligence (RQ1)
-
-Baseline classifier:
-```bash
-python src/baseline_classifier.py
-```
-LLM extraction (needs Ollama running):
-```bash
-python src/llm_extraction.py --input data/processed/kcc_clean.csv --model qwen2.5:7b-instruct
-python src/llm_extraction.py --consistency-check --model qwen2.5:7b-instruct
-```
-Compare both against `data/gold/gold_set_final.csv` — whichever scores
-higher (per-level accuracy/F1) is what feeds the event log in step 5. This
-comparison IS the answer to RQ1 — write down both numbers.
-
-Retrieval (secondary feature):
-```bash
-python src/retrieval.py --query "some example farmer query" --backend sbert
-```
-
-## 5. Layer 2 — Process Mining (RQ2, RQ3)
-
-```bash
-python src/event_log.py --input data/processed/kcc_clean.csv --activity-col Category
-python src/semantic_mismatch.py --backend nli --input data/processed/kcc_clean.csv
-```
-Use whichever column (Category from the classifier, or the LLM's extracted
-category) won the Layer 1 comparison as `--activity-col`.
-
-Look at `outputs/summary_by_crop.csv` (loop rate + duration by crop) for
-RQ2, and cross-reference `outputs/semantic_mismatch.csv`'s flagged rate
-against the loop rate — do crops/categories with high semantic-mismatch
-rates also show high loop rates, or are they catching different problems?
-That comparison is the answer to RQ3.
-
-## 6. Layer 3 — Dashboard
-
-```bash
-python dashboard/app.py
-```
-Open http://127.0.0.1:8050
-
-## Honest deviations from the original proposal (disclose these in the report)
-
-1. **Label clustering backend**: proposal specified sentence-transformer
-   embeddings for merging near-duplicate QueryType labels. The dev
-   environment couldn't reach HuggingFace, so `data_cleaning.py` defaults to
-   TF-IDF character-similarity clustering instead — works everywhere, no
-   external download. Functionally similar for near-duplicate *spelling*
-   variants; weaker on true paraphrases. Swap in the sentence-transformers
-   version if time allows (see `retrieval.py`'s `SbertFaissRetriever` for
-   the pattern).
-2. **Semantic mismatch backend**: same story — `semantic_mismatch.py` has a
-   TF-IDF lexical fallback and the real NLI implementation. The lexical one
-   was tested on synthetic data and flagged ~100% of records as mismatches,
-   because good agronomic answers don't lexically overlap with the problem
-   description at all — this is actually a good, citable justification for
-   why NLI/entailment (not surface overlap) is the right tool for RQ3, not
-   a failure.
-3. **Case-ID limitation**: as already flagged in the proposal, `district +
-   crop` is not a real farmer identity — the "loop rate" in
-   `event_log.py` measures repeated issue-categories within a
-   district+crop bucket over time, which conflates different farmers with
-   the same crop in the same district. Worth a sensitivity note in the
-   report: try a tighter case window (e.g. same month) as a robustness
-   check if time allows.
-4. **Sample sizes**: gold set defaults to 100 records (proposal said
-   300-500) given the compressed timeline — disclose as a scoping decision.
-
-## Project structure
-
-```
-src/
-  fetch_kcc_data.py        # pulls real data via your API key (run on your machine)
-  generate_synthetic_data.py  # dev-only stand-in, not part of the submission
-  data_cleaning.py         # clean, scope, merge near-duplicate labels
-  build_gold_set.py        # sample + merge hand-labeled gold set
-  baseline_classifier.py   # Layer 1, path A: hierarchical TF-IDF+SVM
-  llm_extraction.py        # Layer 1, path B: Ollama structured extraction
-  retrieval.py             # secondary: similar-past-query retrieval
-  event_log.py             # Layer 2: PM4Py event log + Inductive Miner + metrics
-  semantic_mismatch.py     # RQ3: NLI-based query-answer mismatch detection
-dashboard/
-  app.py                   # Layer 3: Dash dashboard
-data/                       # raw, processed, gold (gitignored except synthetic)
-outputs/                    # metrics, csvs, process map image
-models/                     # trained baseline classifier
+ollama pull qwen2.5:7b-instruct
 ```
