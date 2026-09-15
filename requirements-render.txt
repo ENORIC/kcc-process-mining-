@@ -1,0 +1,13 @@
+# Deploy-only requirements for dashboard/app.py. Deliberately smaller than
+# requirements.txt: the dashboard never imports transformers/torch/
+# sentence-transformers/faiss-cpu (those are only used by the offline
+# research scripts -- semantic_mismatch.py's NLI backend, retrieval.py),
+# and Render's free tier is 512MB RAM, which torch alone can blow past.
+pandas>=3.0
+numpy>=2.0
+scikit-learn>=1.9
+joblib>=1.6
+pm4py>=2.7
+dash>=4.0
+plotly>=7.0
+gunicorn>=22.0
