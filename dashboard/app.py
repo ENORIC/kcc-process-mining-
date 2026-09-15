@@ -4,7 +4,6 @@ event_log.py, evaluate_pipelines.py and semantic_mismatch.py, and ties them
 into a findings summary + KPI tiles + process map + loop-rate chart + an
 interactive per-case event explorer + a live query demo.
 
-Run: python dashboard/app.py   (then open http://127.0.0.1:8050)
 """
 import os
 import sys
@@ -18,7 +17,9 @@ import plotly.graph_objects as go
 from dash import Dash, dcc, html, Input, Output, dash_table
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
-from baseline_classifier import HierarchicalClassifier  # noqa: E402 -- needed for joblib.load to resolve the class
+from baseline_classifier import HierarchicalClassifier  # noqa: E402,F401 -- looks unused, but joblib.load()
+# needs this exact class importable under this exact name to reconstruct the pickled classifier below --
+# deleting this import will break loading models/baseline_classifier.joblib
 from event_log import (build_event_log_df, discover_model,  # noqa: E402
                         discover_dfg_data, extract_petri_layout)
 from retrieval import TfidfRetriever  # noqa: E402 -- sklearn only, no torch/HF download needed
@@ -34,9 +35,6 @@ mismatch_df = pd.read_csv(os.path.join(OUT, "semantic_mismatch.csv")) if os.path
     os.path.join(OUT, "semantic_mismatch.csv")) else None
 llm_df = pd.read_csv(os.path.join(OUT, "llm_extraction.csv")) if os.path.exists(
     os.path.join(OUT, "llm_extraction.csv")) else None
-
-metrics_path = os.path.join(OUT, "baseline_classifier_metrics.json")
-metrics = json.load(open(metrics_path)) if os.path.exists(metrics_path) else None
 
 rq1_path = os.path.join(OUT, "rq1_comparison.json")
 rq1 = json.load(open(rq1_path)) if os.path.exists(rq1_path) else None
@@ -98,7 +96,6 @@ variant_counts.insert(0, "rank", range(1, len(variant_counts) + 1))
 top_loop = summary_df[summary_df["n_cases"] >= 5].sort_values("mean_loop_rate", ascending=False).head(3)
 top_loop_text = ", ".join(f"{r.crop} ({r.mean_loop_rate:.0%})" for r in top_loop.itertuples())
 n_cases_total = loop_df["case_id"].nunique()
-n_events_total = len(var_df.merge(loop_df[["case_id"]], on="case_id")) if len(var_df) else 0
 overall_mismatch_pct = (mismatch_df["is_mismatch"].mean() * 100) if mismatch_df is not None else None
 
 app = Dash(__name__)
@@ -133,7 +130,7 @@ def truncate(text, n=140):
 rq1_finding = None
 if rq1:
     rq1_finding = html.Li([
-        html.B(f"RQ1: {rq1['winner']} wins on the hand-verified gold set"),
+        html.B(f"{rq1['winner']} wins on the hand-verified gold set"),
         f" — {rq1['baseline_issuetype_accuracy']:.1%} query-type accuracy (baseline classifier) vs "
         f"{rq1['llm_issuetype_accuracy']:.1%} (LLM extraction), n={rq1['n_compared']} hand-labeled calls. "
         f"The LLM's low macro-F1 ({rq1['llm_issuetype_f1_macro']:.2f}) suggests it collapses many of "
@@ -218,6 +215,19 @@ app.layout = html.Div(style={
         html.Div(id="loop-rate-note", style={"color": COLORS["muted"], "fontSize": "13px",
                                               "marginBottom": "10px"}),
         dcc.Graph(id="loop-rate-chart", config={"displayModeBar": False}),
+    ]),
+
+    # ---- RQ3: does higher answer-mismatch track with higher repeat-issue looping? ----
+    html.Div(style={**CARD_STYLE, "marginBottom": "22px"}, children=[
+        html.Div("Answer quality vs. repeat calls, by crop", style=SECTION_TITLE),
+        html.Div("Each point is one crop. Loop rate is how often the same issue category "
+                  "recurs for a crop; mismatch rate is how often the answer given doesn't "
+                  "actually address the question asked. If the two track together, answer quality "
+                  "may be part of why farmers call back. If they diverge, the two methods are "
+                  "catching different failure modes — worth saying explicitly either way.",
+                  style={"color": COLORS["muted"], "fontSize": "13px", "marginBottom": "14px"}),
+        html.Div(id="rq3-note", style={"color": COLORS["muted"], "fontSize": "13px", "marginBottom": "10px"}),
+        dcc.Graph(id="rq3-scatter", config={"displayModeBar": False}),
     ]),
 
     # ---- process explorer: the discovered process map, two ways to view it ----
@@ -312,7 +322,7 @@ app.layout = html.Div(style={
 
     # ---- LLM extraction sample, if available ----
     html.Div(style={**CARD_STYLE, "marginBottom": "22px"}, children=[
-        html.Div("LLM extraction sample (RQ1, path B)", style=SECTION_TITLE),
+        html.Div("LLM extraction sample (alternate classification method)", style=SECTION_TITLE),
         dash_table.DataTable(
             id="llm-table",
             data=llm_df.head(25).to_dict("records") if llm_df is not None else [],
@@ -362,6 +372,8 @@ app.layout = html.Div(style={
     Output("loop-rate-note", "children"),
     Output("case-summary-table", "data"),
     Output("case-summary-table", "columns"),
+    Output("rq3-scatter", "figure"),
+    Output("rq3-note", "children"),
     Input("crop-filter", "value"),
 )
 def update_dashboard(crops):
@@ -431,7 +443,47 @@ def update_dashboard(crops):
     table_data = case_summary.to_dict("records")
     table_cols = [{"name": c, "id": c} for c in cols]
 
-    return kpis, fig, note, table_data, table_cols
+    # ---- RQ3 scatter: per-crop loop rate (RQ2) vs. per-crop mismatch rate (RQ3) ----
+    if mdf is None:
+        rq3_fig = go.Figure()
+        rq3_fig.update_layout(height=200, plot_bgcolor="white", paper_bgcolor="white",
+                               annotations=[dict(text="No semantic mismatch output found — run "
+                                                       "src/semantic_mismatch.py first.",
+                                                  showarrow=False, font=dict(color=COLORS["muted"]))])
+        rq3_note = ""
+    else:
+        loop_by_crop = ldf.groupby("crop").agg(loop_rate=("loop_rate", "mean"),
+                                                 n_cases=("case_id", "nunique")).reset_index()
+        mismatch_by_crop = mdf.groupby("Crop").agg(mismatch_rate=("is_mismatch", "mean"),
+                                                     n_calls=("is_mismatch", "count")).reset_index()
+        rq3_df = loop_by_crop.merge(mismatch_by_crop, left_on="crop", right_on="Crop", how="inner")
+        # tiny crops (a handful of calls) make a noisy mismatch_rate that isn't a real signal --
+        # same reasoning as the loop-rate chart's threshold above, applied here too
+        rq3_df = rq3_df[rq3_df["n_calls"] >= 5]
+
+        if len(rq3_df) == 0:
+            rq3_fig = go.Figure()
+            rq3_fig.update_layout(height=200, plot_bgcolor="white", paper_bgcolor="white",
+                                   annotations=[dict(text="No crop in this selection has enough calls "
+                                                           "(5+) for a meaningful mismatch rate.",
+                                                      showarrow=False, font=dict(color=COLORS["muted"]))])
+            rq3_note = ""
+        else:
+            rq3_fig = px.scatter(rq3_df, x="loop_rate", y="mismatch_rate", size="n_cases",
+                                  hover_name="crop", color_discrete_sequence=[COLORS["accent"]],
+                                  labels={"loop_rate": "Mean loop rate",
+                                          "mismatch_rate": "Answer-mismatch rate"},
+                                  hover_data={"n_cases": True, "n_calls": True})
+            rq3_fig.update_traces(marker=dict(line=dict(width=1, color="white")))
+            rq3_fig.update_layout(margin=dict(l=10, r=10, t=10, b=10),
+                                   plot_bgcolor="white", paper_bgcolor="white", height=420)
+            corr = rq3_df["loop_rate"].corr(rq3_df["mismatch_rate"])
+            rq3_note = (f"Crops with 5+ calls, n={len(rq3_df)}. Correlation between loop rate and "
+                        f"mismatch rate across these crops: {corr:.2f} "
+                        f"({'the two track together' if corr > 0.3 else 'weak/no relationship' if abs(corr) < 0.3 else 'they move in opposite directions'} "
+                        f"in this selection).")
+
+    return kpis, fig, note, table_data, table_cols, rq3_fig, rq3_note
 
 
 def _wrap_label(name, max_len=16):
