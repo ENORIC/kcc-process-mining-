@@ -220,6 +220,19 @@ app.layout = html.Div(style={
         dcc.Graph(id="loop-rate-chart", config={"displayModeBar": False}),
     ]),
 
+    # ---- RQ3: does higher answer-mismatch track with higher repeat-issue looping? ----
+    html.Div(style={**CARD_STYLE, "marginBottom": "22px"}, children=[
+        html.Div("RQ3 — Semantic mismatch vs. repeat-issue loops, by crop", style=SECTION_TITLE),
+        html.Div("Each point is one crop. Loop rate (RQ2) is how often the same issue category "
+                  "recurs for a crop; mismatch rate (RQ3) is how often the answer given doesn't "
+                  "actually address the question asked. If the two track together, answer quality "
+                  "may be part of why farmers call back. If they diverge, the two methods are "
+                  "catching different failure modes — worth saying explicitly either way.",
+                  style={"color": COLORS["muted"], "fontSize": "13px", "marginBottom": "14px"}),
+        html.Div(id="rq3-note", style={"color": COLORS["muted"], "fontSize": "13px", "marginBottom": "10px"}),
+        dcc.Graph(id="rq3-scatter", config={"displayModeBar": False}),
+    ]),
+
     # ---- process explorer: the discovered process map, two ways to view it ----
     html.Div(style={**CARD_STYLE, "marginBottom": "22px"}, children=[
         html.Div("Process explorer", style=SECTION_TITLE),
@@ -362,6 +375,8 @@ app.layout = html.Div(style={
     Output("loop-rate-note", "children"),
     Output("case-summary-table", "data"),
     Output("case-summary-table", "columns"),
+    Output("rq3-scatter", "figure"),
+    Output("rq3-note", "children"),
     Input("crop-filter", "value"),
 )
 def update_dashboard(crops):
@@ -431,7 +446,47 @@ def update_dashboard(crops):
     table_data = case_summary.to_dict("records")
     table_cols = [{"name": c, "id": c} for c in cols]
 
-    return kpis, fig, note, table_data, table_cols
+    # ---- RQ3 scatter: per-crop loop rate (RQ2) vs. per-crop mismatch rate (RQ3) ----
+    if mdf is None:
+        rq3_fig = go.Figure()
+        rq3_fig.update_layout(height=200, plot_bgcolor="white", paper_bgcolor="white",
+                               annotations=[dict(text="No semantic mismatch output found — run "
+                                                       "src/semantic_mismatch.py first.",
+                                                  showarrow=False, font=dict(color=COLORS["muted"]))])
+        rq3_note = ""
+    else:
+        loop_by_crop = ldf.groupby("crop").agg(loop_rate=("loop_rate", "mean"),
+                                                 n_cases=("case_id", "nunique")).reset_index()
+        mismatch_by_crop = mdf.groupby("Crop").agg(mismatch_rate=("is_mismatch", "mean"),
+                                                     n_calls=("is_mismatch", "count")).reset_index()
+        rq3_df = loop_by_crop.merge(mismatch_by_crop, left_on="crop", right_on="Crop", how="inner")
+        # tiny crops (a handful of calls) make a noisy mismatch_rate that isn't a real signal --
+        # same reasoning as the loop-rate chart's threshold above, applied here too
+        rq3_df = rq3_df[rq3_df["n_calls"] >= 5]
+
+        if len(rq3_df) == 0:
+            rq3_fig = go.Figure()
+            rq3_fig.update_layout(height=200, plot_bgcolor="white", paper_bgcolor="white",
+                                   annotations=[dict(text="No crop in this selection has enough calls "
+                                                           "(5+) for a meaningful mismatch rate.",
+                                                      showarrow=False, font=dict(color=COLORS["muted"]))])
+            rq3_note = ""
+        else:
+            rq3_fig = px.scatter(rq3_df, x="loop_rate", y="mismatch_rate", size="n_cases",
+                                  hover_name="crop", color_discrete_sequence=[COLORS["accent"]],
+                                  labels={"loop_rate": "Mean loop rate (RQ2)",
+                                          "mismatch_rate": "Answer-mismatch rate (RQ3)"},
+                                  hover_data={"n_cases": True, "n_calls": True})
+            rq3_fig.update_traces(marker=dict(line=dict(width=1, color="white")))
+            rq3_fig.update_layout(margin=dict(l=10, r=10, t=10, b=10),
+                                   plot_bgcolor="white", paper_bgcolor="white", height=420)
+            corr = rq3_df["loop_rate"].corr(rq3_df["mismatch_rate"])
+            rq3_note = (f"Crops with 5+ calls, n={len(rq3_df)}. Correlation between loop rate and "
+                        f"mismatch rate across these crops: {corr:.2f} "
+                        f"({'the two track together' if corr > 0.3 else 'weak/no relationship' if abs(corr) < 0.3 else 'they move in opposite directions'} "
+                        f"in this selection).")
+
+    return kpis, fig, note, table_data, table_cols, rq3_fig, rq3_note
 
 
 def _wrap_label(name, max_len=16):
