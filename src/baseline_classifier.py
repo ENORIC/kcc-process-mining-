@@ -21,12 +21,20 @@ from sklearn.metrics import accuracy_score, f1_score, classification_report
 
 
 class HierarchicalClassifier:
-    def __init__(self, min_class_count=3):
-        self.category_vectorizer = TfidfVectorizer(max_features=5000, ngram_range=(1, 2), min_df=1)
-        self.category_clf = LinearSVC(class_weight="balanced")
+    def __init__(self, min_class_count=3, C=2.0):
+        # sublinear_tf (log-scaled term frequency, standard for TF-IDF+linear-SVM
+        # text classification) and min_df=2 (drop terms that appear exactly once
+        # anywhere -- almost always typos/noise, not learnable signal) are the two
+        # vectorizer changes from the original config, both generic best practice.
+        # C is tuned via a validation split carved out of the TRAINING data only
+        # (see tune_C.py) -- the gold set is never touched during tuning.
+        self.category_vectorizer = TfidfVectorizer(max_features=6000, ngram_range=(1, 2),
+                                                     min_df=2, sublinear_tf=True)
+        self.category_clf = LinearSVC(class_weight="balanced", C=C)
         self.querytype_vectorizers = {}   # category -> vectorizer
         self.querytype_clfs = {}          # category -> classifier
         self.min_class_count = min_class_count
+        self.C = C
 
     def fit(self, df: pd.DataFrame, text_col="QueryText", category_col="Category", querytype_col="QueryType"):
         X_text = df[text_col].values
@@ -46,9 +54,12 @@ class HierarchicalClassifier:
                 self.querytype_vectorizers[cat] = None
                 self.querytype_clfs[cat] = sub[querytype_col].mode().iloc[0] if len(sub) else None
                 continue
-            vec = TfidfVectorizer(max_features=3000, ngram_range=(1, 2), min_df=1)
+            # min_df stays at 1 here (unlike the category vectorizer above) --
+            # some categories have only a few dozen records, and min_df=2 on
+            # a subset that small starves the vocabulary rather than denoising it
+            vec = TfidfVectorizer(max_features=3000, ngram_range=(1, 2), min_df=1, sublinear_tf=True)
             Xq = vec.fit_transform(sub[text_col])
-            clf = LinearSVC(class_weight="balanced")
+            clf = LinearSVC(class_weight="balanced", C=self.C)
             clf.fit(Xq, sub[querytype_col])
             self.querytype_vectorizers[cat] = vec
             self.querytype_clfs[cat] = clf

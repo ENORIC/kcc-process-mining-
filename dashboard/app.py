@@ -9,18 +9,18 @@ Run: python dashboard/app.py   (then open http://127.0.0.1:8050)
 import os
 import sys
 import json
-import base64
-import tempfile
 import joblib
+import numpy as np
 import pandas as pd
+import networkx as nx
 import plotly.express as px
 import plotly.graph_objects as go
 from dash import Dash, dcc, html, Input, Output, dash_table
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 from baseline_classifier import HierarchicalClassifier  # noqa: E402 -- needed for joblib.load to resolve the class
-from event_log import (build_event_log_df, discover_and_export_dfg,  # noqa: E402
-                        discover_model, export_process_map)
+from event_log import (build_event_log_df, discover_model,  # noqa: E402
+                        discover_dfg_data, extract_petri_layout)
 from retrieval import TfidfRetriever  # noqa: E402 -- sklearn only, no torch/HF download needed
 
 BASE = os.path.join(os.path.dirname(__file__), "..")
@@ -45,10 +45,15 @@ classifier_path = os.path.join(BASE, "models", "baseline_classifier.joblib")
 classifier = joblib.load(classifier_path) if os.path.exists(classifier_path) else None
 
 # --- raw per-call data, kept ONLY for the case explorer (event-level drilldown) ---
-# case = DistrictName + "_" + Crop, activity = Category, ordered by CreatedOn --
-# same definition event_log.py uses, so the explorer matches the loop-rate/duration
-# numbers exactly.
-ACTIVITY_COL = "Category"
+# case = DistrictName + "_" + Crop, activity = QueryType, ordered by CreatedOn --
+# same definition event_log.py uses (and the same field the static report
+# figures/CSVs were built from), so the explorer matches the loop-rate/duration
+# numbers exactly. NOTE: this used to be "Category", which is actually the
+# crop's broad family (Vegetables/Fruits/Plantation Crops/...) and barely
+# varies within a case defined by district+crop -- QueryType (the real
+# 42-value advisory issue-type field) is what actually changes call to call
+# and is what the process map is supposed to show.
+ACTIVITY_COL = "QueryType"
 raw_df = pd.read_csv(os.path.join(BASE, "data", "processed", "kcc_clean.csv"))
 raw_df["case_id"] = raw_df["DistrictName"].astype(str) + "_" + raw_df["Crop"].astype(str)
 raw_df["CreatedOn"] = pd.to_datetime(raw_df["CreatedOn"])
@@ -219,26 +224,31 @@ app.layout = html.Div(style={
     html.Div(style={**CARD_STYLE, "marginBottom": "22px"}, children=[
         html.Div("Process explorer", style=SECTION_TITLE),
         html.Div("Automatically discovered from every call in the dataset (not hand-drawn). Boxes are "
-                  "categories, arrows are call-to-call transitions weighted by frequency, and a "
-                  "self-loop (an arrow from a box back to itself) means the same category recurring "
-                  "back-to-back. Filtered to the busiest categories/paths so the picture stays "
+                  "issue types, arrows are call-to-call transitions weighted by frequency, and a "
+                  "self-loop (an arrow from a box back to itself) means the same issue type recurring "
+                  "back-to-back. Filtered to the busiest issue types/paths so the picture stays "
                   "readable — the full unfiltered graph is genuinely unreadable at this scale, which "
-                  "is disclosed in the report rather than hidden.",
+                  "is disclosed in the report rather than hidden. Hover over any box or arrow for the "
+                  "exact numbers behind it.",
                   style={"color": COLORS["muted"], "fontSize": "13px", "marginBottom": "14px"}),
-        dcc.RadioItems(
+        dcc.Dropdown(
             id="map-toggle",
             options=[
-                {"label": " Simple map (recommended — call-frequency flow)", "value": "dfg"},
-                {"label": " Formal process model (Inductive Miner Petri net)", "value": "petri"},
+                {"label": "Simple map (recommended — interactive, call-frequency flow)", "value": "dfg"},
+                {"label": "Formal process model (Inductive Miner Petri net)", "value": "petri"},
             ],
-            value="dfg", inline=False,
-            style={"marginBottom": "14px", "color": COLORS["text"], "fontSize": "14px"},
-            labelStyle={"display": "block", "marginBottom": "4px"},
+            value="dfg", clearable=False,
+            style={"marginBottom": "14px", "fontSize": "14px", "maxWidth": "480px"},
         ),
         html.Div(id="process-map-note", style={"color": COLORS["muted"], "fontSize": "13px",
                                                  "marginBottom": "10px"}),
         html.Div(id="process-map-legend"),
-        html.Img(id="process-map", style={"width": "100%", "borderRadius": "8px"}),
+        html.Div(id="process-map-dfg-wrapper", children=[
+            dcc.Graph(id="process-map-interactive", config={"displayModeBar": False}),
+        ]),
+        html.Div(id="process-map-petri-wrapper", children=[
+            dcc.Graph(id="process-map-petri-graph", config={"displayModeBar": False}),
+        ]),
     ]),
 
     # ---- variant explorer: which advisory PATTERNS recur across many cases ----
@@ -424,27 +434,238 @@ def update_dashboard(crops):
     return kpis, fig, note, table_data, table_cols
 
 
-def _encode_png(path):
-    with open(path, "rb") as f:
-        return f"data:image/png;base64,{base64.b64encode(f.read()).decode()}"
+def _wrap_label(name, max_len=16):
+    """Break a long issue-type name onto two lines at the nearest space to
+    the middle, so it doesn't get clipped or run into neighboring nodes."""
+    if len(name) <= max_len or " " not in name:
+        return name
+    mid = len(name) // 2
+    space_positions = [i for i, ch in enumerate(name) if ch == " "]
+    best = min(space_positions, key=lambda i: abs(i - mid))
+    return name[:best] + "<br>" + name[best + 1:]
+
+
+def build_dfg_figure(dfg, start_activities, end_activities, node_totals):
+    """Builds an interactive Plotly version of the directly-follows graph --
+    same discovery/trimming as the static report figure, but hoverable exact
+    counts instead of a flat graphviz image.
+
+    Design choices made after actually looking at a first draft of this and
+    finding it unreadable: full names go BELOW each node (never crammed
+    inside the circle, which clipped text badly at small sizes); only the
+    call count sits inside the marker; and when both A->B and B->A exist
+    (very common here -- issue types ping-pong back and forth) the two
+    arrows are offset to either side of the straight line between them,
+    otherwise they visually merge into one thick double-ended blob.
+    """
+    nodes = sorted(node_totals, key=lambda n: -node_totals[n])
+    self_loops = {n: dfg.get((n, n), 0) for n in nodes}
+    edges = [(a, b, c) for (a, b), c in dfg.items() if a != b]
+    edge_set = {(a, b) for a, b, _ in edges}
+
+    G = nx.DiGraph()
+    G.add_nodes_from(nodes)
+    for a, b, c in edges:
+        G.add_edge(a, b, weight=c)
+    # circular layout: guarantees even spacing regardless of how connected a
+    # node is, which matters more here than graph-theoretically "meaningful"
+    # clustering for a non-technical viewer
+    pos = nx.circular_layout(G, scale=1.3)
+
+    max_total = max(node_totals.values()) if node_totals else 1
+    max_edge = max((c for _, _, c in edges), default=1)
+
+    fig = go.Figure()
+
+    annotations = []
+    for a, b, c in sorted(edges, key=lambda e: e[2]):
+        x0, y0 = pos[a]
+        x1, y1 = pos[b]
+        # if the reverse edge also exists, nudge this line sideways
+        # (perpendicular to its direction) so the two arrows run in
+        # parallel instead of stacking on top of each other
+        if (b, a) in edge_set:
+            dx, dy = x1 - x0, y1 - y0
+            length = max((dx ** 2 + dy ** 2) ** 0.5, 1e-6)
+            perp_x, perp_y = -dy / length, dx / length
+            offset = 0.06
+            x0, y0 = x0 + perp_x * offset, y0 + perp_y * offset
+            x1, y1 = x1 + perp_x * offset, y1 + perp_y * offset
+
+        width = 1.5 + 6.5 * (c / max_edge)
+        annotations.append(dict(
+            x=x1, y=y1, ax=x0, ay=y0, xref="x", yref="y", axref="x", ayref="y",
+            showarrow=True, arrowhead=3, arrowsize=1, arrowwidth=width,
+            arrowcolor=COLORS["accent2"], standoff=24, startstandoff=24, opacity=0.75,
+        ))
+        mx, my = (x0 + x1) / 2, (y0 + y1) / 2
+        fig.add_trace(go.Scatter(
+            x=[mx], y=[my], mode="markers+text", text=[f"{c}"],
+            textfont=dict(size=12, color=COLORS["accent"], family="Arial Black, Arial, sans-serif"),
+            marker=dict(size=16, color="white", opacity=0.01),
+            hovertemplate=f"<b>{a} → {b}</b><br>{c} calls followed this path<extra></extra>",
+            showlegend=False,
+        ))
+
+    node_colors = [COLORS["muted"] if n == "Other" else COLORS["accent"] for n in nodes]
+    node_sizes = [34 + 46 * ((node_totals[n] / max_total) ** 0.5) for n in nodes]
+    node_x = [pos[n][0] for n in nodes]
+    node_y = [pos[n][1] for n in nodes]
+    hover_texts, name_labels, count_labels = [], [], []
+    for n in nodes:
+        loop_txt = (f"<br>{self_loops[n]} repeat calls (same issue twice in a row)"
+                    if self_loops[n] else "")
+        start_txt = f"<br>Starts {start_activities[n]} case(s)" if n in start_activities else ""
+        end_txt = f"<br>Ends {end_activities[n]} case(s)" if n in end_activities else ""
+        hover_texts.append(f"<b>{n}</b><br>{node_totals[n]} calls total{loop_txt}{start_txt}{end_txt}")
+        loop_badge = f"<br>({self_loops[n]} repeats)" if self_loops[n] else ""
+        name_labels.append(_wrap_label(n) + loop_badge)
+        count_labels.append(f"{node_totals[n]}")
+
+    # name + repeat-count badge, always visible BELOW the node -- pushed down
+    # by a bit more than each node's own radius (converted from marker px to
+    # roughly the same data-coordinate scale as the axis range below) so the
+    # label never overlaps the circle it belongs to, even for the biggest nodes
+    label_y = [y - (size / 2 + 10) / 145 for y, size in zip(node_y, node_sizes)]
+    fig.add_trace(go.Scatter(
+        x=node_x, y=label_y, mode="text", text=name_labels,
+        textposition="bottom center", textfont=dict(size=12, color=COLORS["text"]),
+        hoverinfo="skip", showlegend=False,
+    ))
+    # the marker itself, with just the raw call count inside (always short,
+    # always fits) and the full detail on hover
+    fig.add_trace(go.Scatter(
+        x=node_x, y=node_y, mode="markers+text", text=count_labels,
+        textposition="middle center", textfont=dict(size=13, color="white", family="Arial Black, Arial"),
+        marker=dict(size=node_sizes, color=node_colors, line=dict(width=2, color="white")),
+        hovertext=hover_texts, hoverinfo="text", showlegend=False,
+    ))
+
+    fig.update_layout(
+        annotations=annotations, showlegend=False, height=560,
+        margin=dict(l=30, r=30, t=20, b=60), plot_bgcolor="white", paper_bgcolor="white",
+        xaxis=dict(visible=False, range=[-1.9, 1.9]), yaxis=dict(visible=False, range=[-1.8, 1.9]),
+        hovermode="closest",
+    )
+    return fig
+
+
+def build_petri_figure(nodes, edges):
+    """Interactive version of the formal Petri net, positioned using
+    graphviz's own `dot` layout (see extract_petri_layout) rather than a
+    from-scratch layout -- `dot` already does a good job of laying out a
+    left-to-right control-flow diagram, so there's no reason to reinvent it.
+    Circles are places, squares are transitions (black = silent/routing
+    only, colored = an actual call category), matching the shape key.
+    """
+    xs = [n["x"] for n in nodes.values()]
+    ys = [n["y"] for n in nodes.values()]
+    x_pad = max((max(xs) - min(xs)) * 0.06, 0.8) if xs else 1
+    y_pad = max((max(ys) - min(ys)) * 0.15, 0.8) if ys else 1
+
+    x_range = [min(xs) - x_pad, max(xs) + x_pad] if xs else [-1, 1]
+    y_range = [min(ys) - y_pad, max(ys) + y_pad] if ys else [-1, 1]
+    aspect = (x_range[1] - x_range[0]) / max(y_range[1] - y_range[0], 0.1)
+    height = int(max(320, min(620, 900 / max(aspect, 1))))
+    # px-per-data-unit on the y axis, so the label offset below a transition
+    # box is calibrated to actually clear the marker (half its pixel size,
+    # plus a small gap) regardless of how tall/dense this particular subset's
+    # graph is -- a fixed multiple of y_pad overcorrected on dense graphs
+    px_per_unit_y = height / (y_range[1] - y_range[0])
+    label_offset = (26 / 2 + 9) / px_per_unit_y
+
+    fig = go.Figure()
+    annotations = []
+    for a, b in edges:
+        if a not in nodes or b not in nodes:
+            continue
+        na, nb = nodes[a], nodes[b]
+        annotations.append(dict(
+            x=nb["x"], y=nb["y"], ax=na["x"], ay=na["y"], xref="x", yref="y", axref="x", ayref="y",
+            showarrow=True, arrowhead=2, arrowsize=1, arrowwidth=1.4,
+            arrowcolor=COLORS["muted"], standoff=16, startstandoff=16, opacity=0.7,
+        ))
+
+    silent = [n for n in nodes.values() if n["kind"] == "transition" and n["is_silent"]]
+    labeled = [n for n in nodes.values() if n["kind"] == "transition" and not n["is_silent"]]
+    start_p = [n for n in nodes.values() if n["kind"] == "place" and n["is_start"]]
+    end_p = [n for n in nodes.values() if n["kind"] == "place" and n["is_end"]]
+    plain_p = [n for n in nodes.values() if n["kind"] == "place" and not n["is_start"] and not n["is_end"]]
+
+    def add_group(group, size, color, symbol, text=None, textcolor="white", hover_fn=None):
+        if not group:
+            return
+        fig.add_trace(go.Scatter(
+            x=[n["x"] for n in group], y=[n["y"] for n in group],
+            mode="markers+text" if text else "markers",
+            text=text, textposition="middle center", textfont=dict(size=11, color=textcolor),
+            marker=dict(size=size, color=color, symbol=symbol, line=dict(width=1.5, color=COLORS["muted"])),
+            hovertext=[hover_fn(n) for n in group] if hover_fn else None,
+            hoverinfo="text" if hover_fn else "skip", showlegend=False,
+        ))
+
+    add_group(plain_p, 14, "white", "circle",
+              hover_fn=lambda n: "Waiting point between steps — not a real event, "
+                                  "just formal bookkeeping the algorithm needs.")
+    add_group(start_p, 24, COLORS["accent"], "circle", text=["S"] * len(start_p),
+              hover_fn=lambda n: "Start of the process (initial marking).")
+    add_group(end_p, 26, COLORS["text"], "circle", text=["E"] * len(end_p),
+              hover_fn=lambda n: "End of the process (final marking).")
+    add_group(silent, 13, "black", "square",
+              hover_fn=lambda n: "Silent step — routing logic the miner needs, not an actual call.")
+
+    if labeled:
+        fig.add_trace(go.Scatter(
+            x=[n["x"] for n in labeled], y=[n["y"] for n in labeled], mode="markers",
+            marker=dict(size=26, color=COLORS["accent"], symbol="square",
+                        line=dict(width=1.5, color=COLORS["muted"])),
+            hovertext=[f"<b>{n['label']}</b><br>An actual call in this flow." for n in labeled],
+            hoverinfo="text", showlegend=False,
+        ))
+        label_y = [n["y"] - label_offset for n in labeled]
+        fig.add_trace(go.Scatter(
+            x=[n["x"] for n in labeled], y=label_y, mode="text",
+            text=[_wrap_label(n["label"], max_len=14) for n in labeled],
+            textposition="bottom center", textfont=dict(size=11, color=COLORS["text"]),
+            hoverinfo="skip", showlegend=False,
+        ))
+
+    fig.update_layout(
+        annotations=annotations, showlegend=False, height=height,
+        margin=dict(l=20, r=20, t=20, b=50), plot_bgcolor="white", paper_bgcolor="white",
+        xaxis=dict(visible=False, range=x_range),
+        yaxis=dict(visible=False, range=y_range, scaleanchor="x", scaleratio=1),
+        hovermode="closest",
+    )
+    return fig
 
 
 PETRI_LEGEND = html.Div([
-    html.Div("Shape key (this is formal notation, not the recommended view):",
+    html.Div("Shape key (this is formal notation, not the recommended view — hover any shape for detail):",
              style={"fontWeight": "700", "fontSize": "13px", "marginBottom": "6px", "color": COLORS["text"]}),
     html.Ul([
-        html.Li([html.B("Circle with a black dot: "), "the process starts here."]),
-        html.Li([html.B("Solid black rectangle: "), "an actual call category happening (a \"transition\")."]),
+        html.Li([html.B("Circle marked \"S\": "), "the process starts here (the initial marking)."]),
+        html.Li([html.B("Colored square: "), "an actual call category happening (a \"transition\") — "
+                 "the name is labeled underneath it."]),
+        html.Li([html.B("Solid black square: "), "a silent step — routing logic the miner needs to "
+                 "represent choice/parallelism, not an actual call."]),
         html.Li([html.B("Plain empty circle: "), "a waiting point between steps — not a real event itself, "
                  "just formal bookkeeping the algorithm needs."]),
-        html.Li([html.B("Double circle with a black square: "), "the process ends here."]),
+        html.Li([html.B("Circle marked \"E\": "), "the process ends here (the final marking)."]),
     ], style={"fontSize": "13px", "color": COLORS["muted"], "lineHeight": "1.7", "marginBottom": "12px"}),
 ], style={"backgroundColor": COLORS["bg"], "border": f"1px dashed {COLORS['border']}",
           "borderRadius": "8px", "padding": "12px 16px", "marginBottom": "12px"})
 
 
+DFG_VISIBLE = {"display": "block"}
+DFG_HIDDEN = {"display": "none"}
+
+
 @app.callback(
-    Output("process-map", "src"),
+    Output("process-map-interactive", "figure"),
+    Output("process-map-petri-graph", "figure"),
+    Output("process-map-dfg-wrapper", "style"),
+    Output("process-map-petri-wrapper", "style"),
     Output("process-map-note", "children"),
     Output("process-map-legend", "children"),
     Input("map-toggle", "value"),
@@ -452,44 +673,59 @@ PETRI_LEGEND = html.Div([
 )
 def update_process_map(which, crops):
     legend = PETRI_LEGEND if which == "petri" else None
-    # No crop filter -> serve the pre-rendered full-dataset image (instant, and
-    # matches exactly what's in the report). WITH a crop filter, actually
-    # rediscover the process map live from just that subset -- confirmed this
-    # is fast enough to do on every filter change (well under a second even
-    # for the busiest crop), so filtering genuinely changes the diagram
-    # instead of just re-showing the same full-dataset picture.
-    if not crops:
-        filename = "process_model.png" if which == "petri" else "process_map.png"
-        image_path = os.path.join(OUT, filename)
-        return (_encode_png(image_path) if os.path.exists(image_path) else ""), "", legend
+    dfg_style = DFG_VISIBLE if which == "dfg" else DFG_HIDDEN
+    petri_style = DFG_HIDDEN if which == "dfg" else DFG_VISIBLE
+    empty_fig = go.Figure()
+    empty_fig.update_layout(height=200, plot_bgcolor="white", paper_bgcolor="white")
 
-    subset = raw_df[raw_df["Crop"].isin(crops)]
+    # Both views are generated live from the current data every time this
+    # callback fires -- no pre-rendered picture, cached or otherwise, and
+    # neither is a flat image anymore: both render as hoverable Plotly
+    # figures built straight from what pm4py just discovered. Timed this at
+    # ~0.3s for the Petri net and well under that for the DFG even on the
+    # full unfiltered dataset (6570 calls), so no cached shortcut is needed.
+    if not crops:
+        subset = raw_df
+    else:
+        subset = raw_df[raw_df["Crop"].isin(crops)]
+
     n_calls = len(subset)
     n_cases = subset["case_id"].nunique()
+
     if n_calls < 2:
-        return "", (f"Only {n_calls} call{'s' if n_calls != 1 else ''} for this selection — there's no "
-                     f"call-to-call transition to draw a flow from. See the KPI tiles and case explorer "
-                     f"above for what that one call actually was."), None
+        note = (f"Only {n_calls} call{'s' if n_calls != 1 else ''} for this selection — there's no "
+                 f"call-to-call transition to draw a flow from. See the KPI tiles and case explorer "
+                 f"above for what that one call actually was.")
+        return empty_fig, empty_fig, dfg_style, petri_style, note, None
 
     log_df = build_event_log_df(subset, activity_col=ACTIVITY_COL, date_col="CreatedOn")
+    note = (f"Auto-generated live from {n_calls} calls across {n_cases} case(s) — every crop, full "
+             f"dataset." if not crops else
+            f"Auto-generated live from {n_calls} calls across {n_cases} case(s) matching this filter.")
 
-    with tempfile.TemporaryDirectory() as tmp:
-        tmp_path = os.path.join(tmp, "map.png")
+    if which == "dfg":
         try:
-            if which == "petri":
-                _, _, net, im, fm = discover_model(log_df)
-                export_process_map(net, im, fm, out_path=tmp_path)
-            else:
-                discover_and_export_dfg(log_df, out_path=tmp_path)
-            note = f"Live-generated from {n_calls} calls across {n_cases} case(s) matching this filter."
-            return _encode_png(tmp_path), note, legend
+            dfg, starts, ends, totals = discover_dfg_data(log_df)
+            fig = build_dfg_figure(dfg, starts, ends, totals)
+            return fig, empty_fig, dfg_style, petri_style, note, legend
         except Exception:
-            # a very small/sparse filtered subset can occasionally have too
-            # little structure for the miner to draw -- explain rather than
-            # silently leaving a blank box
-            return "", (f"Couldn't build a process diagram from this selection ({n_calls} calls, "
-                         f"{n_cases} case(s)) — too little structure for the miner to draw a flow from. "
-                         f"Try a broader crop selection."), None
+            note = (f"Couldn't build a process diagram from this selection ({n_calls} calls, "
+                     f"{n_cases} case(s)) — too little structure for the miner to draw a flow from. "
+                     f"Try a broader crop selection.")
+            return empty_fig, empty_fig, dfg_style, petri_style, note, None
+
+    # Petri net view -- always mined fresh from log_df, rendered as an
+    # interactive figure (see build_petri_figure), never a static file
+    try:
+        _, _, net, im, fm = discover_model(log_df)
+        nodes, edges = extract_petri_layout(net, im, fm)
+        fig = build_petri_figure(nodes, edges)
+        return empty_fig, fig, dfg_style, petri_style, note, legend
+    except Exception:
+        note = (f"Couldn't build a process diagram from this selection ({n_calls} calls, "
+                 f"{n_cases} case(s)) — too little structure for the miner to draw a flow from. "
+                 f"Try a broader crop selection.")
+        return empty_fig, empty_fig, dfg_style, petri_style, note, None
 
 
 @app.callback(
@@ -586,7 +822,7 @@ def update_case_explorer(case_id):
     fig = px.scatter(
         events, x="CreatedOn", y=[1] * len(events), color=ACTIVITY_COL,
         hover_data={"step": True, "hover_query": True, "CreatedOn": True, ACTIVITY_COL: True},
-        labels={"CreatedOn": "Call date", ACTIVITY_COL: "Category"},
+        labels={"CreatedOn": "Call date", ACTIVITY_COL: "Issue type"},
     )
     fig.update_traces(marker=dict(size=14, line=dict(width=1, color="white")))
     # thin connecting line to show the sequence, drawn behind the colored points
@@ -595,17 +831,69 @@ def update_case_explorer(case_id):
     fig.data = (fig.data[-1],) + fig.data[:-1]  # push the line to the back
     fig.update_yaxes(visible=False, range=[0.5, 1.5])
     fig.update_layout(height=220, plot_bgcolor="white", paper_bgcolor="white",
-                       margin=dict(l=10, r=10, t=10, b=10), legend_title_text="Category")
+                       margin=dict(l=10, r=10, t=10, b=10), legend_title_text="Issue type")
 
     detail = events[["CreatedOn", ACTIVITY_COL, "QueryText", "KccAns"]].copy()
     detail["CreatedOn"] = detail["CreatedOn"].dt.strftime("%Y-%m-%d")
     detail["QueryText"] = detail["QueryText"].apply(lambda t: truncate(t, 160))
     detail["KccAns"] = detail["KccAns"].apply(lambda t: truncate(t, 160))
-    detail = detail.rename(columns={"CreatedOn": "Date", ACTIVITY_COL: "Category",
+    detail = detail.rename(columns={"CreatedOn": "Date", ACTIVITY_COL: "Issue type",
                                      "QueryText": "Query", "KccAns": "Answer"})
     detail_cols = [{"name": c, "id": c} for c in detail.columns]
 
     return stats, fig, detail.to_dict("records"), detail_cols
+
+
+def _prediction_card(label, value, confidence=None):
+    conf_bar = None
+    if confidence is not None:
+        pct = f"{confidence * 100:.0f}%"
+        conf_bar = html.Div([
+            html.Div(style={"width": f"{confidence * 100:.0f}%", "height": "6px",
+                             "backgroundColor": COLORS["accent"], "borderRadius": "3px"}),
+        ], style={"width": "100%", "height": "6px", "backgroundColor": COLORS["border"],
+                   "borderRadius": "3px", "marginTop": "8px"})
+        conf_label = html.Div(f"Model confidence: {pct}", style={"fontSize": "11px",
+                               "color": COLORS["muted"], "marginTop": "4px"})
+    fig_children = [
+        html.Div(label, style={"fontSize": "12px", "color": COLORS["muted"], "fontWeight": "600",
+                                "textTransform": "uppercase", "letterSpacing": "0.5px"}),
+        html.Div(value, style={"fontSize": "20px", "fontWeight": "800", "color": COLORS["text"],
+                                "marginTop": "4px"}),
+    ]
+    if conf_bar is not None:
+        fig_children += [conf_bar, conf_label]
+    return html.Div(fig_children, style={**CARD_STYLE, "padding": "14px 16px", "flex": "1", "minWidth": "180px"})
+
+
+def _predict_with_confidence(clf, text):
+    """Same hierarchical prediction as HierarchicalClassifier.predict(), plus a
+    relative-confidence readout for the category stage using the linear SVM's
+    decision margin (softmax-normalized) -- NOT a calibrated probability, so
+    it's labeled "model confidence" rather than a percentage-likelihood claim.
+    Query-type confidence is skipped: several per-category sub-classifiers are
+    binary (decision_function returns a single scalar, not one score per
+    class, in that case) or a plain majority-class fallback with no model at
+    all, and handling every one of those shapes correctly isn't worth the risk
+    this close to a deadline for a secondary readout.
+    """
+    Xc = clf.category_vectorizer.transform([text])
+    cat_scores = clf.category_clf.decision_function(Xc)[0]
+    cat_classes = clf.category_clf.classes_
+    exp_scores = np.exp(cat_scores - np.max(cat_scores))
+    cat_probs = exp_scores / exp_scores.sum()
+    best_i = int(np.argmax(cat_probs))
+    pred_cat = cat_classes[best_i]
+    cat_confidence = float(cat_probs[best_i])
+
+    vec = clf.querytype_vectorizers.get(pred_cat)
+    sub_clf = clf.querytype_clfs.get(pred_cat)
+    if vec is None:
+        pred_qtype = sub_clf if isinstance(sub_clf, str) else "UNKNOWN"
+    else:
+        Xq = vec.transform([text])
+        pred_qtype = sub_clf.predict(Xq)[0]
+    return pred_cat, cat_confidence, pred_qtype
 
 
 @app.callback(
@@ -620,11 +908,11 @@ def live_query_demo(text):
     if classifier is None:
         return "Baseline classifier not found — run src/baseline_classifier.py first.", [], []
 
-    pred_cat, pred_qtype = classifier.predict([text])
+    pred_cat, cat_confidence, pred_qtype = _predict_with_confidence(classifier, text)
     result = html.Div([
-        html.Div([html.B("Predicted category: "), pred_cat[0]]),
-        html.Div([html.B("Predicted query type: "), pred_qtype[0]], style={"marginTop": "6px"}),
-    ])
+        _prediction_card("Predicted category", pred_cat, confidence=cat_confidence),
+        _prediction_card("Predicted query type", pred_qtype),
+    ], style={"display": "flex", "gap": "12px", "flexWrap": "wrap"})
 
     similar = retriever.query(text, k=5)
     similar = similar[similar["similarity"] > 0.03]  # drop near-zero matches -- not actually similar

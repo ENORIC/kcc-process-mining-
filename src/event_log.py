@@ -4,24 +4,23 @@ Layer 2: Build a PM4Py event log from the validated Layer 1 output and mine it.
 Per proposal: case = district + crop, activity = validated category,
 timestamp = call date. "Validated category" means whichever of the baseline
 classifier / LLM extraction pipeline scored better against the gold set in
-Layer 1 -- here it's a parameter (`activity_col`) so this module doesn't
-care which one produced it.
+Layer 1 (decided in evaluate_pipelines.py) -- here it's a parameter
+(`activity_col`) so this module doesn't care which one produced it.
 
 Outputs:
   - a PM4Py-formatted event log
-  - a directly-follows process map (plain labeled boxes + frequency arrows --
-    readable, Celonis/Disco-style)
-  - a Petri net model too (academically "sounder" but denser notation --
-    kept for completeness, not the one to show in a demo)
+  - a discovered process model (Inductive Miner -> guaranteed sound/readable)
   - loop rate per case (proxy for "unresolved query": same activity recurring)
   - case duration
   - variant analysis, sliceable by crop / state / season
 """
+import re
 import argparse
 import pandas as pd
 import pm4py
 from pm4py.algo.discovery.inductive import algorithm as inductive_miner
 from pm4py.objects.conversion.process_tree import converter as pt_converter
+from pm4py.visualization.petri_net import visualizer as pn_visualizer
 
 
 def build_event_log_df(df: pd.DataFrame, activity_col="Category", date_col="CreatedOn") -> pd.DataFrame:
@@ -35,9 +34,14 @@ def build_event_log_df(df: pd.DataFrame, activity_col="Category", date_col="Crea
 
 
 def discover_model(log_df: pd.DataFrame, top_n_activities=8, top_k_variants=15):
-    """Petri net via Inductive Miner -- 'sound' but dense academic notation
-    (places + silent transitions). Kept for completeness/methodology
-    writeup; discover_and_export_dfg() below is the one to actually show."""
+    """Discovers a process model for VISUALIZATION. With 40+ distinct
+    QueryTypes and 700+ real-world-variable cases, Inductive Miner is still
+    "sound" (a valid, deadlock-free Petri net) but visually turns into an
+    unreadable spaghetti model -- this is a real limitation worth disclosing,
+    not a bug. Standard fix (what real process mining tools do): filter to
+    the most frequent activities and variants before discovery, so the MAP
+    is legible, while loop-rate/duration/variant CSVs keep full resolution.
+    """
     filtered = log_df.copy()
 
     top_activities = filtered["concept:name"].value_counts().head(top_n_activities).index
@@ -53,38 +57,94 @@ def discover_model(log_df: pd.DataFrame, top_n_activities=8, top_k_variants=15):
     return event_log, tree, net, im, fm
 
 
+_NODE_RE = re.compile(r'^\s*(\d+)\s*\[(.*)\]\s*$')
+_EDGE_RE = re.compile(r'^\s*(\d+)\s*->\s*(\d+)\s*\[.*\]\s*$')
+_LABEL_RE = re.compile(r'label=(<[^>]*>|"[^"]*"|\S+)')
+_PLAIN_NODE_RE = re.compile(r'^node\s+(\d+)\s+([\d.]+)\s+([\d.]+)')
+
+
+def extract_petri_layout(net, im, fm):
+    """Reuses graphviz's own `dot` layout engine (already a dependency of
+    pm4py, since that's how the static Petri net picture gets rendered) to
+    get real node coordinates for a LEFT-TO-RIGHT flow layout, instead of
+    reinventing graph layout from scratch. The DOT source (via gviz.body)
+    gives node/edge structure and type (place vs transition, silent vs
+    labeled, start/end marking); the `dot -Tplain` output (via gviz.pipe)
+    gives the x/y position `dot` actually computed for each node. Combining
+    both lets the dashboard draw an interactive version of exactly the
+    layout graphviz would have drawn as a static picture.
+    """
+    gviz = pn_visualizer.apply(net, im, fm)
+
+    nodes = {}
+    edges = []
+    for line in gviz.body:
+        m = _EDGE_RE.match(line)
+        if m:
+            edges.append((m.group(1), m.group(2)))
+            continue
+        m = _NODE_RE.match(line)
+        if not m:
+            continue
+        node_id, attrs = m.group(1), m.group(2)
+        label_m = _LABEL_RE.search(attrs)
+        raw_label = label_m.group(1) if label_m else '""'
+        is_place = "shape=circle" in attrs or "shape=doublecircle" in attrs
+        is_end = "doublecircle" in attrs
+        is_start = "&#9679;" in raw_label  # the filled-dot glyph pm4py uses for the initial marking
+        is_silent = (not is_place) and "fillcolor=black" in attrs
+        label = raw_label.strip('"')
+        if label.startswith("<") or label in ("", "<>"):
+            label = None
+        nodes[node_id] = {
+            "kind": "place" if is_place else "transition",
+            "label": label, "is_start": is_start, "is_end": is_end, "is_silent": is_silent,
+            "x": 0.0, "y": 0.0,
+        }
+
+    plain = gviz.pipe(format="plain").decode()
+    for line in plain.splitlines():
+        m = _PLAIN_NODE_RE.match(line)
+        if m and m.group(1) in nodes:
+            nodes[m.group(1)]["x"] = float(m.group(2))
+            nodes[m.group(1)]["y"] = float(m.group(3))
+
+    return nodes, edges
+
+
 def export_process_map(net, im, fm, out_path="outputs/process_model.png"):
     pm4py.save_vis_petri_net(net, im, fm, out_path)
-    print(f"Saved process map (Petri net) -> {out_path}")
+    print(f"Saved process map -> {out_path}")
 
 
 def discover_and_export_dfg(log_df: pd.DataFrame, out_path="outputs/process_map.png",
                              top_n_activities=6, top_n_edges=10):
-    """A directly-follows graph (DFG): plain labeled boxes + frequency-
-    weighted arrows, no places/silent-transition notation. This is what
-    tools like Celonis/Disco show as "the process map" -- much more
-    readable for a demo/report than the Inductive Miner Petri net.
+    """A directly-follows graph (DFG) instead of a raw Petri net: plain
+    labeled boxes + frequency-weighted arrows, no places/silent-transition
+    notation. This is what tools like Celonis/Disco show as "the process
+    map" -- much more readable for a demo/report than the Inductive Miner
+    Petri net, which is technically correct but dense academic notation.
 
-    Trims to top_n_activities nodes and top_n_edges edges BY HAND (pm4py's
-    own max_num_edges option has a bug where it can drop a node's only
-    edges while still listing it as a start/end activity, which crashes
-    the renderer).
+    Trims to top_n_activities nodes and top_n_edges edges BY HAND (rather
+    than relying on pm4py's own max_num_edges option, which has a bug where
+    it can drop a node's only edges while leaving it listed as a start/end
+    activity, causing a KeyError deep in the graphviz renderer).
     """
     filtered = log_df.copy()
     top_activities = filtered["concept:name"].value_counts().head(top_n_activities).index
     filtered["concept:name"] = filtered["concept:name"].where(
         filtered["concept:name"].isin(top_activities), "Other")
-    # sanitize labels for the picture only (a comma inside a label like
-    # "Water Management, Micro Irrigation" breaks the graph renderer) --
-    # doesn't touch your actual data/CSVs
+    # sanitize labels for the graph renderer only (commas inside a label
+    # like "Water Management, Micro Irrigation" break pm4py/graphviz) --
+    # this only affects the picture, not the underlying data/CSVs
     filtered["concept:name"] = filtered["concept:name"].str.replace(",", " -", regex=False)
 
     dfg, start_activities, end_activities = pm4py.discover_dfg(
         filtered, activity_key="concept:name", timestamp_key="time:timestamp",
         case_id_key="case:concept:name")
 
-    # keep only the strongest edges; rank self-loops separately so a couple
-    # of huge repeat-loops don't crowd out the real cross-activity flows
+    # keep only the strongest edges, and drop self-loops from the edge-count
+    # ranking so a couple of huge repeat-loops don't crowd out everything else
     non_loop = {e: c for e, c in dfg.items() if e[0] != e[1]}
     loop = {e: c for e, c in dfg.items() if e[0] == e[1]}
     top_non_loop = dict(sorted(non_loop.items(), key=lambda kv: kv[1], reverse=True)[:top_n_edges])
@@ -101,6 +161,44 @@ def discover_and_export_dfg(log_df: pd.DataFrame, out_path="outputs/process_map.
                         rankdir="LR",
                         graph_title="KCC Advisory Process Map (strongest flows, by call frequency)")
     print(f"Saved directly-follows process map -> {out_path}")
+
+
+def discover_dfg_data(log_df: pd.DataFrame, top_n_activities=6, top_n_edges=10):
+    """Same discovery + trimming logic as discover_and_export_dfg, but returns
+    the raw (trimmed_dfg, start_activities, end_activities, node_totals) data
+    instead of rendering a graphviz PNG -- so the dashboard can draw its own
+    interactive Plotly version (hoverable counts, no static image) from the
+    exact same numbers that appear in the static report figure.
+    """
+    filtered = log_df.copy()
+    top_activities = filtered["concept:name"].value_counts().head(top_n_activities).index
+    filtered["concept:name"] = filtered["concept:name"].where(
+        filtered["concept:name"].isin(top_activities), "Other")
+    filtered["concept:name"] = filtered["concept:name"].str.replace(",", " -", regex=False)
+
+    dfg, start_activities, end_activities = pm4py.discover_dfg(
+        filtered, activity_key="concept:name", timestamp_key="time:timestamp",
+        case_id_key="case:concept:name")
+
+    non_loop = {e: c for e, c in dfg.items() if e[0] != e[1]}
+    loop = {e: c for e, c in dfg.items() if e[0] == e[1]}
+    top_non_loop = dict(sorted(non_loop.items(), key=lambda kv: kv[1], reverse=True)[:top_n_edges])
+    trimmed_dfg = {**top_non_loop, **loop}
+
+    nodes_in_graph = set()
+    for (a, b) in trimmed_dfg:
+        nodes_in_graph.add(a)
+        nodes_in_graph.add(b)
+    start_activities = {a: c for a, c in start_activities.items() if a in nodes_in_graph}
+    end_activities = {a: c for a, c in end_activities.items() if a in nodes_in_graph}
+
+    # total call volume per node, straight from the (pre-trim) activity counts,
+    # so node size/labels reflect true frequency even if some of a node's
+    # edges got trimmed out of the picture for readability
+    node_totals = filtered["concept:name"].value_counts().to_dict()
+    node_totals = {n: node_totals.get(n, 0) for n in nodes_in_graph}
+
+    return trimmed_dfg, start_activities, end_activities, node_totals
 
 
 def loop_rate_per_case(log_df: pd.DataFrame) -> pd.DataFrame:
