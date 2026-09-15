@@ -14,11 +14,13 @@ Outputs:
   - case duration
   - variant analysis, sliceable by crop / state / season
 """
+import re
 import argparse
 import pandas as pd
 import pm4py
 from pm4py.algo.discovery.inductive import algorithm as inductive_miner
 from pm4py.objects.conversion.process_tree import converter as pt_converter
+from pm4py.visualization.petri_net import visualizer as pn_visualizer
 
 
 def build_event_log_df(df: pd.DataFrame, activity_col="Category", date_col="CreatedOn") -> pd.DataFrame:
@@ -53,6 +55,61 @@ def discover_model(log_df: pd.DataFrame, top_n_activities=8, top_k_variants=15):
     tree = inductive_miner.apply(event_log)
     net, im, fm = pt_converter.apply(tree)
     return event_log, tree, net, im, fm
+
+
+_NODE_RE = re.compile(r'^\s*(\d+)\s*\[(.*)\]\s*$')
+_EDGE_RE = re.compile(r'^\s*(\d+)\s*->\s*(\d+)\s*\[.*\]\s*$')
+_LABEL_RE = re.compile(r'label=(<[^>]*>|"[^"]*"|\S+)')
+_PLAIN_NODE_RE = re.compile(r'^node\s+(\d+)\s+([\d.]+)\s+([\d.]+)')
+
+
+def extract_petri_layout(net, im, fm):
+    """Reuses graphviz's own `dot` layout engine (already a dependency of
+    pm4py, since that's how the static Petri net picture gets rendered) to
+    get real node coordinates for a LEFT-TO-RIGHT flow layout, instead of
+    reinventing graph layout from scratch. The DOT source (via gviz.body)
+    gives node/edge structure and type (place vs transition, silent vs
+    labeled, start/end marking); the `dot -Tplain` output (via gviz.pipe)
+    gives the x/y position `dot` actually computed for each node. Combining
+    both lets the dashboard draw an interactive version of exactly the
+    layout graphviz would have drawn as a static picture.
+    """
+    gviz = pn_visualizer.apply(net, im, fm)
+
+    nodes = {}
+    edges = []
+    for line in gviz.body:
+        m = _EDGE_RE.match(line)
+        if m:
+            edges.append((m.group(1), m.group(2)))
+            continue
+        m = _NODE_RE.match(line)
+        if not m:
+            continue
+        node_id, attrs = m.group(1), m.group(2)
+        label_m = _LABEL_RE.search(attrs)
+        raw_label = label_m.group(1) if label_m else '""'
+        is_place = "shape=circle" in attrs or "shape=doublecircle" in attrs
+        is_end = "doublecircle" in attrs
+        is_start = "&#9679;" in raw_label  # the filled-dot glyph pm4py uses for the initial marking
+        is_silent = (not is_place) and "fillcolor=black" in attrs
+        label = raw_label.strip('"')
+        if label.startswith("<") or label in ("", "<>"):
+            label = None
+        nodes[node_id] = {
+            "kind": "place" if is_place else "transition",
+            "label": label, "is_start": is_start, "is_end": is_end, "is_silent": is_silent,
+            "x": 0.0, "y": 0.0,
+        }
+
+    plain = gviz.pipe(format="plain").decode()
+    for line in plain.splitlines():
+        m = _PLAIN_NODE_RE.match(line)
+        if m and m.group(1) in nodes:
+            nodes[m.group(1)]["x"] = float(m.group(2))
+            nodes[m.group(1)]["y"] = float(m.group(3))
+
+    return nodes, edges
 
 
 def export_process_map(net, im, fm, out_path="outputs/process_model.png"):
