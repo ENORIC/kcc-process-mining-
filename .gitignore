@@ -24,4 +24,4 @@ outputs/*
 !outputs/process_model.png
 
 models/*.bin
-models/*.gguf
+models/*.gguf.venv_nli/
