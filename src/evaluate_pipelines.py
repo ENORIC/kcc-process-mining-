@@ -3,10 +3,6 @@ RQ1: does LLM-based structured extraction beat the supervised TF-IDF+SVM
 baseline classifier at predicting QueryType (the real 42-value issue-type
 taxonomy), when both are scored against the same hand-verified gold set?
 
-Run this AFTER:
-    python src/baseline_classifier.py
-    python src/llm_extraction.py --input data/gold/gold_set_final.csv \
-        --out outputs/llm_extraction_gold.csv --model qwen2.5:7b-instruct
 """
 import json
 import argparse
