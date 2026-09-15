@@ -1,0 +1,9 @@
+{
+  "n_compared": 300,
+  "llm_issuetype_accuracy": 0.5833333333333334,
+  "llm_issuetype_f1_macro": 0.09820488176114886,
+  "llm_resolution_signal_accuracy": 0.8,
+  "baseline_issuetype_accuracy": 0.76,
+  "baseline_issuetype_f1_macro": 0.405894579058943,
+  "winner": "Baseline classifier"
+}

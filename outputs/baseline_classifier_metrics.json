@@ -1,0 +1,6 @@
+{
+  "category_accuracy": 0.8599695585996956,
+  "category_f1_macro": 0.6694424735501905,
+  "querytype_accuracy": 0.7557077625570776,
+  "querytype_f1_macro": 0.26489873663380803
+}

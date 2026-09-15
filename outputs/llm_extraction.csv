@@ -1,0 +1,201 @@
+category,crop,issue,resolution_signal,_parse_error,RecordId
+Cultural Practices,Cowpea,Field preparation method,resolved,False,0
+Weather,Unknown,Weather forecast for crops,unresolved,False,1
+Nutrient Management,Unknown,colour change in leaves,resolved,False,2
+Nutrient Management,Banana,Nutrient application schedule,resolved,False,3
+Weather,Unknown,50% chance for rainfall,resolved,False,4
+Weather,Unknown,No rainfall expected,resolved,False,5
+Weather,Unknown,50% chance for rainfall,unresolved,False,6
+Plant Protection,Pomegranate,Fruit cracking management,resolved,False,7
+Other,Unknown,Preparation of fish jaggery mixture,resolved,False,8
+Nutrient Management,Rose,Need nutrient management,resolved,False,9
+Plant Protection,Coconut,Button shedding,resolved,False,10
+Nutrient Management,Banana,Application of AYAR,resolved,False,11
+Weather,Unknown,High chance of rainfall,unresolved,False,12
+Plant Protection,Brinjal,Management of sooty mold,resolved,False,13
+Plant Protection,Mango,Control of Loranthus,resolved,False,14
+Nutrient Management,Ginger,Nutrient application schedule,resolved,False,15
+Plant Protection,Mango,Fruit dropping,resolved,False,16
+Plant Protection,Brinjal,bud dropping management,resolved,False,17
+Nutrient Management,Pepper,Dosage of NPK mix,resolved,False,18
+Plant Protection,Rose,management of thrips,resolved,False,19
+Nutrient Management,Coconut,Potassium deficiency,resolved,False,20
+Plant Protection,Curry leaf,leaf eating caterpillar,resolved,False,21
+Plant Protection,Chillies,Less flowering,resolved,False,22
+Nutrient Management,Banana,Need nutrient management,resolved,False,23
+Plant Protection,Unknown,Use of hydrogen peroxide,resolved,False,24
+Nutrient Management,Banana,Nutrient deficiency,resolved,False,25
+Nutrient Management,Coconut,Nutrient deficiency,resolved,False,26
+Market Information,Nutmeg,average yield,unresolved,False,27
+Nutrient Management,Teak,nutrient management,resolved,False,28
+Nutrient Management,Areca nut,Need nutrient management,resolved,False,29
+Plant Protection,Coconut,management of fruit rot,resolved,False,30
+Plant Protection,Unknown,Preparation of Bordeux mixture,resolved,False,31
+Other,Unknown,Jackfruit seed quality,unresolved,False,32
+Plant Protection,Unknown,control of Ants,resolved,False,33
+Plant Protection,Cucumber,management of fruit borer,resolved,False,34
+Nutrient Management,Nutmeg,Management of immature nut fall,resolved,False,35
+Nutrient Management,"Rubber, Coconut, Arecanut",Application of NPK,unresolved,False,36
+Nutrient Management,Papaya,Nutrient management,resolved,False,37
+Cultural Practices,Papaya,flower and fruit inducing technique,resolved,False,38
+Nutrient Management,Unknown,Application of urea and DAP,unresolved,False,39
+Nutrient Management,PEPPER,Fertilizer application during flowering,resolved,False,40
+Plant Protection,Coconut,management of Wilt disease,resolved,False,41
+Weather,Unknown,Weather forecast for agricultural operations,resolved,False,42
+Nutrient Management,Arecanut,Fertilizer application,resolved,False,43
+Nutrient Management,Coconut,Application of neemcake and bonemeal,resolved,False,44
+Nutrient Management,Unknown,Dosage and Expiry of Fertilizers,resolved,False,45
+Nutrient Management,Areca nut,Interval for organic manure,resolved,False,46
+Nutrient Management,Ginger,Application of lime,resolved,False,47
+Plant Protection,Ginger,Preplant treatment,resolved,False,48
+Nutrient Management,Coconut,Nutrient application schedule,resolved,False,49
+Nutrient Management,Coconut,Mgso4 application,resolved,False,50
+Plant Protection,Coconut,management of bud rot,resolved,False,51
+Nutrient Management,Coconut,Management of barren nuts,resolved,False,52
+Plant Protection,Coconut,management of leaf cutting weevil,resolved,False,53
+Plant Protection,Ivy Gourd,Management of Aphids,resolved,False,54
+Plant Protection,Mango,leaf webber management,resolved,False,55
+Nutrient Management,Arecanut,organic nutrient management,resolved,False,56
+Nutrient Management,Arecanut,Nutrient application schedule,resolved,False,57
+Nutrient Management,Pepper,Need nutrient management,resolved,False,58
+Nutrient Management,Cocoa,Nutrient application schedule,resolved,False,59
+Plant Protection,Rambutan,prophylactic measures against fungal diseases,resolved,False,60
+Plant Protection,Black pepper,Management of mosaic symptoms,resolved,False,61
+Nutrient Management,Pashion fruit,potassium deficiency,resolved,False,62
+Weather,Unknown,Weather forecast for today and tomorrow,resolved,False,63
+Nutrient Management,Arecanut,Nutrient application schedule,resolved,False,64
+Nutrient Management,Coconut,Nutrient application schedule,resolved,False,65
+Plant Protection,Chilli,Leaf curling management,resolved,False,66
+Nutrient Management,Coconut,Nutrient application schedule,resolved,False,67
+Weather,Unknown,Weather forecast for crops,resolved,False,68
+Weather,Unknown,Weather forecast for today,resolved,False,69
+Nutrient Management,Guava,Nutrient management for flowering,resolved,False,70
+Nutrient Management,Arecanut,Application of lime,resolved,False,71
+Nutrient Management,Coconut,Nutrient application for mature coconut,resolved,False,72
+Cultural Practices,Mango,Spacing of pits,resolved,False,73
+Other,Unknown,Contact number request,resolved,False,74
+Other,Unknown,Contact number of farms,unresolved,False,75
+Nutrient Management,Nutmeg,Nutrient application schedule,resolved,False,76
+Nutrient Management,Black Pepper,Radius of fertilizer application,resolved,False,77
+Weather,Unknown,Weather forecast for Kasargod district,resolved,False,78
+Weather,Unknown,Weather forecast for planting,resolved,False,79
+Weather,Unknown,Weather forecast for agricultural operations,resolved,False,80
+Weather,Unknown,High chance of rainfall,unresolved,False,81
+Plant Protection,Brinjal,Usage of rooting hormone,unresolved,False,82
+Plant Protection,Ivy gourd,leaf curling,resolved,False,83
+Nutrient Management,Nendran banana,Nutrient management,resolved,False,84
+Cultural Practices,Coconut,Season of planting,resolved,False,85
+Cultural Practices,Coconut,Germination time period,unresolved,False,86
+Weather,Unknown,Expected rainfall,resolved,False,87
+Weather,Unknown,Weather forecast for agricultural operations,resolved,False,88
+Weather,Unknown,Low chance of rainfall,unresolved,False,89
+Weather,Unknown,High chance of rainfall,resolved,False,90
+Weather,Unknown,Weather forecast for agricultural operations,resolved,False,91
+Cultural Practices,"Sweet potato, Yams",Planting time,resolved,False,92
+Nutrient Management,Pepper,Nutrient application schedule,resolved,False,93
+Nutrient Management,Cardamom,Fertilizer application timing and dosage,resolved,False,94
+Nutrient Management,Cardamom,Nutrient application schedule,resolved,False,95
+Other,Unknown,animal husbandry contact number,unresolved,False,96
+Other,Unknown,Contact number request,unresolved,False,97
+Nutrient Management,Unknown,Content of dolomite and Lime,unresolved,False,98
+Nutrient Management,Coconut,Nutrient application,resolved,False,99
+Nutrient Management,Cocoa,Nutrient application,resolved,False,100
+Other,Unknown,Availability of biofertilizer,unresolved,False,101
+Nutrient Management,Cardamom,Fruit dropping,resolved,False,102
+Nutrient Management,Unknown,Need for soil testing,resolved,False,103
+Cultural Practices,Ivy Gourd,Fruit inducing techniques,resolved,False,104
+Nutrient Management,Nutmeg,Nutrient application schedule,resolved,False,105
+Weather,Unknown,"Weather forecast for Angamaly, Kerala",unresolved,False,106
+Cultural Practices,Cocoa,Pit size,resolved,False,107
+Other,Unknown,availability of cocoa seedling,unresolved,False,108
+Plant Protection,Unknown,post harvest preservation,unresolved,False,109
+Weather,Unknown,No rainfall forecast,resolved,False,110
+Plant Protection,Mango,stem borer management,resolved,False,111
+Plant Protection,Jack fruit,Leaf drying management,resolved,False,112
+Plant Protection,Gardenia,flower dropping management,resolved,False,113
+Other,Unknown,Contact details requested,resolved,False,114
+Plant Protection,Chilly,Management of wilt disease,resolved,False,115
+Market Information,Unknown,Seeking nursery contacts,resolved,False,116
+Weather,Unknown,Weather forecast for crops,unresolved,False,117
+Weather,Unknown,100% chance of rainfall,unresolved,False,118
+Plant Protection,Ginger,Seed treatment,resolved,False,119
+Nutrient Management,Unknown,sulfur deficiency management,resolved,False,120
+Weather,Unknown,100% chance of rainfall,unresolved,False,121
+Other,Marigold,Seed Availability,unresolved,False,122
+Weather,Unknown,High chance of weather,unresolved,False,123
+Nutrient Management,Pineapple,Nutrient application timing and quantity,resolved,False,124
+Nutrient Management,Coconut,Need nutrient management,resolved,False,125
+Other,Paddy,Management of unwanted fishes,unresolved,False,126
+Other,Unknown,Contact fisheries department,unresolved,False,127
+Plant Protection,Unknown,Ant management,resolved,False,128
+Nutrient Management,Jasmine,Application of neem cake and ground nut cake,resolved,False,129
+Cultural Practices,Marigold,spacing and harvesting,resolved,False,130
+Cultural Practices,Grapes,Season of pruning,unresolved,False,131
+Nutrient Management,Coconut,Need for fertilizer application,resolved,False,132
+Other,Unknown,Harvesting of coconut,unresolved,False,133
+Plant Protection,Nutmeg,management of fungal rot,resolved,False,134
+Weather,Unknown,Thank you for calling,unresolved,False,135
+Weather,Unknown,Thank you for calling,unresolved,False,136
+Plant Protection,Bottle gourd,management of red pumpkin beetle,resolved,False,137
+Plant Protection,Cowpea,Management of ant,resolved,False,138
+Plant Protection,Vegetable,slow growth,resolved,False,139
+Market Information,Unknown,availability of seedlings,unresolved,False,140
+Weather,Unknown,50% chance of rainfall,unresolved,False,141
+Market Information,Unknown,Query about scheme,unresolved,False,142
+Cultural Practices,Banana,Regrowth after wind breakage,unresolved,False,143
+Nutrient Management,Unknown,Need fertilizer suggestion,unresolved,False,144
+Other,Unknown,High yielding varieties,resolved,False,145
+Market Information,Turmeric,Seed availability,unresolved,False,146
+Nutrient Management,sapota and jackfruit,flowering nutrient management,resolved,False,147
+Nutrient Management,Areca nut,Nutrient application timing and quantity,resolved,False,148
+Nutrient Management,Sapota,Nutrient application schedule,resolved,False,149
+Plant Protection,Chillies,Not flowering,resolved,False,150
+Plant Protection,Bush Pepper,Producing disease free rooted cuttings,resolved,False,151
+Cultural Practices,Coconut,Planting method,resolved,False,152
+Weather,Unknown,No rainfall forecast,unresolved,False,153
+Nutrient Management,Bhindi,nitrogen deficiency,resolved,False,154
+Cultural Practices,Arecanut,Spacing of Arecanut,resolved,False,155
+Nutrient Management,Elephant foot yam,Nutrient application schedule,resolved,False,156
+Plant Protection,Unknown,Actara insecticide dosage,resolved,False,157
+Plant Protection,Cowpea,manage Aphids,resolved,False,158
+Nutrient Management,Coconut,Nutrient application schedule,resolved,False,159
+Plant Protection,Chilli,Management of Thrips,resolved,False,160
+Plant Protection,Unknown,Insecticide dosage needed,resolved,False,161
+Plant Protection,Drumstick,Water management,resolved,False,162
+Nutrient Management,Unknown,Time gap for liming and fertilizing,resolved,False,163
+Nutrient Management,Coconut,Nutrient application schedule,resolved,False,164
+Nutrient Management,Arecanut,Nutrient application schedule,resolved,False,165
+Weather,Unknown,Weather forecast for crops,unclear,False,166
+Other,Unknown,Availability of blackpepper variety,unresolved,False,167
+Plant Protection,Banana,management of fusarium wilt,resolved,False,168
+Plant Protection,Nutmeg,borax application,resolved,False,169
+Plant Protection,Chillies,management of leaf curl disease,resolved,False,170
+Weather,Unknown,Weather forecast for operations,resolved,False,171
+Plant Protection,Mango,mango malformation,resolved,False,172
+Nutrient Management,Banana,Nutrient management after bunch emergence,resolved,False,173
+Nutrient Management,Curry leaf,growth promoter,resolved,False,174
+Weather,Unknown,High chance of rainfall,unresolved,False,175
+Other,Unknown,growth of broken sapota plant,unresolved,False,176
+Cultural Practices,Colocasia,Planting season,resolved,False,177
+Nutrient Management,Coconut,Nutrient application schedule,resolved,False,178
+Plant Protection,Rubber,Reduced latex,resolved,False,179
+Plant Protection,Chilly,Management of leaf curling disease,resolved,False,180
+Plant Protection,Coconut,management of budrot,resolved,False,181
+Plant Protection,Coconut,management of budrot,resolved,False,182
+Plant Protection,Coconut,management of bud rot,resolved,False,183
+Plant Protection,Coconut,Control of inflorescence blight,resolved,False,184
+Weather,Coconut,High rainfall concerns,resolved,False,185
+Nutrient Management,Coconut,Nutrient application method,resolved,False,186
+Nutrient Management,Nutmeg,Application of 19:19:19 fertilizer,resolved,False,187
+Plant Protection,Arecanut,Management of mite,resolved,False,188
+Other,Unknown,Contact details for IIHR,resolved,False,189
+Weather,Unknown,Weather forecast for operations,resolved,False,190
+Other,Unknown,Storage duration of mushroom spawn,unresolved,False,191
+Other,Unknown,Seed availability,unresolved,False,192
+Nutrient Management,Tapioca,Nutrient application,resolved,False,193
+Cultural Practices,Unknown,Suitable vegetable crops for season,resolved,False,194
+Nutrient Management,Banana,phosphorus deficiency,resolved,False,195
+Weather,Banana,drought tolerant varieties,unresolved,False,196
+Plant Protection,Arecanut,Collar rot and wilting,resolved,False,197
+Nutrient Management,Coconut,Application of salt,resolved,False,198
+Other,Ney poovan banana,variety clarification,unresolved,False,199

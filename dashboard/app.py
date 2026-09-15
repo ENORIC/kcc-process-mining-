@@ -1,0 +1,650 @@
+"""
+Layer 3: Dashboard. Reads the outputs produced by baseline_classifier.py,
+event_log.py, evaluate_pipelines.py and semantic_mismatch.py, and ties them
+into a findings summary + KPI tiles + process map + loop-rate chart + an
+interactive per-case event explorer + a live query demo.
+
+Run: python dashboard/app.py   (then open http://127.0.0.1:8050)
+"""
+import os
+import sys
+import json
+import base64
+import tempfile
+import joblib
+import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
+from dash import Dash, dcc, html, Input, Output, dash_table
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
+from baseline_classifier import HierarchicalClassifier  # noqa: E402 -- needed for joblib.load to resolve the class
+from event_log import (build_event_log_df, discover_and_export_dfg,  # noqa: E402
+                        discover_model, export_process_map)
+from retrieval import TfidfRetriever  # noqa: E402 -- sklearn only, no torch/HF download needed
+
+BASE = os.path.join(os.path.dirname(__file__), "..")
+OUT = os.path.join(BASE, "outputs")
+
+loop_df = pd.read_csv(os.path.join(OUT, "loop_rate_per_case.csv"))
+dur_df = pd.read_csv(os.path.join(OUT, "case_durations.csv"))
+var_df = pd.read_csv(os.path.join(OUT, "variants.csv"))
+summary_df = pd.read_csv(os.path.join(OUT, "summary_by_crop.csv"))
+mismatch_df = pd.read_csv(os.path.join(OUT, "semantic_mismatch.csv")) if os.path.exists(
+    os.path.join(OUT, "semantic_mismatch.csv")) else None
+llm_df = pd.read_csv(os.path.join(OUT, "llm_extraction.csv")) if os.path.exists(
+    os.path.join(OUT, "llm_extraction.csv")) else None
+
+metrics_path = os.path.join(OUT, "baseline_classifier_metrics.json")
+metrics = json.load(open(metrics_path)) if os.path.exists(metrics_path) else None
+
+rq1_path = os.path.join(OUT, "rq1_comparison.json")
+rq1 = json.load(open(rq1_path)) if os.path.exists(rq1_path) else None
+
+classifier_path = os.path.join(BASE, "models", "baseline_classifier.joblib")
+classifier = joblib.load(classifier_path) if os.path.exists(classifier_path) else None
+
+# --- raw per-call data, kept ONLY for the case explorer (event-level drilldown) ---
+# case = DistrictName + "_" + Crop, activity = Category, ordered by CreatedOn --
+# same definition event_log.py uses, so the explorer matches the loop-rate/duration
+# numbers exactly.
+ACTIVITY_COL = "Category"
+raw_df = pd.read_csv(os.path.join(BASE, "data", "processed", "kcc_clean.csv"))
+raw_df["case_id"] = raw_df["DistrictName"].astype(str) + "_" + raw_df["Crop"].astype(str)
+raw_df["CreatedOn"] = pd.to_datetime(raw_df["CreatedOn"])
+raw_df = raw_df.sort_values(["case_id", "CreatedOn"])
+
+# TF-IDF retriever for the live demo -- surfaces REAL past KCC answers for
+# similar questions instead of the classifier just naming a category and
+# stopping. Deliberately the tfidf backend, not sbert: no torch/HuggingFace
+# download needed, so this works the same locally and on a deployed instance.
+retriever = TfidfRetriever().fit(raw_df, text_col="QueryText")
+
+CROPS = sorted(loop_df["crop"].unique())
+# every case in this dataset is KERALA -- see the "Honest deviations" section of
+# the README for why this project is scoped to one state rather than filtered
+# down from a larger multi-state pull. No state filter is shown because a
+# dropdown with one possible value is dead UI, not a real filter.
+
+# case list for the explorer dropdown -- busiest / most-looping cases first, since
+# those are the interesting ones to drill into
+case_options_df = (loop_df.merge(dur_df[["case_id", "duration_days"]], on="case_id", how="left")
+                    .sort_values("n_events", ascending=False))
+CASE_OPTIONS = [
+    {"label": f"{r.case_id}  —  {r.n_events} events, loop rate {r.loop_rate:.0%}", "value": r.case_id}
+    for r in case_options_df.itertuples()
+]
+DEFAULT_CASE = case_options_df.iloc[0]["case_id"] if len(case_options_df) else None
+
+# variant explorer: how many CASES share the exact same activity sequence --
+# a different question from the case explorer (which is "what happened in
+# THIS one case"). Distinct from case-level detail: this groups cases by
+# shared pattern so recurring advisory pathways are visible at a glance.
+variant_counts = (var_df.groupby("variant")
+                  .agg(n_cases=("case_id", "nunique"),
+                       example_crops=("crop", lambda s: ", ".join(sorted(set(s))[:3])))
+                  .reset_index())
+variant_counts["n_steps"] = variant_counts["variant"].str.count("->") + 1
+variant_counts["pct_of_cases"] = (variant_counts["n_cases"] / var_df["case_id"].nunique() * 100).round(1)
+variant_counts = variant_counts.sort_values("n_cases", ascending=False).reset_index(drop=True)
+variant_counts.insert(0, "rank", range(1, len(variant_counts) + 1))
+
+# --- derived, report-ready numbers, computed once at startup ---
+top_loop = summary_df[summary_df["n_cases"] >= 5].sort_values("mean_loop_rate", ascending=False).head(3)
+top_loop_text = ", ".join(f"{r.crop} ({r.mean_loop_rate:.0%})" for r in top_loop.itertuples())
+n_cases_total = loop_df["case_id"].nunique()
+n_events_total = len(var_df.merge(loop_df[["case_id"]], on="case_id")) if len(var_df) else 0
+overall_mismatch_pct = (mismatch_df["is_mismatch"].mean() * 100) if mismatch_df is not None else None
+
+app = Dash(__name__)
+app.title = "KCC Process Mining"
+server = app.server  # exposed for gunicorn / hosting platforms
+
+COLORS = {
+    "bg": "#f5f6fa", "card": "#ffffff", "accent": "#4f46e5", "accent2": "#818cf8",
+    "text": "#1f2937", "muted": "#6b7280", "border": "#e5e7eb",
+}
+
+CARD_STYLE = {
+    "backgroundColor": COLORS["card"], "borderRadius": "12px", "padding": "20px",
+    "boxShadow": "0 1px 3px rgba(0,0,0,0.08)", "border": f"1px solid {COLORS['border']}",
+}
+KPI_STYLE = {**CARD_STYLE, "textAlign": "center", "flex": "1", "minWidth": "160px"}
+SECTION_TITLE = {"color": COLORS["text"], "marginBottom": "12px", "fontSize": "18px", "fontWeight": "700"}
+
+
+def kpi_tile(value, label, color=COLORS["accent"]):
+    return html.Div([
+        html.Div(value, style={"fontSize": "28px", "fontWeight": "800", "color": color}),
+        html.Div(label, style={"fontSize": "13px", "color": COLORS["muted"], "marginTop": "4px"}),
+    ], style=KPI_STYLE)
+
+
+def truncate(text, n=140):
+    text = "" if pd.isna(text) else str(text)
+    return text if len(text) <= n else text[:n].rstrip() + "…"
+
+
+rq1_finding = None
+if rq1:
+    rq1_finding = html.Li([
+        html.B(f"RQ1: {rq1['winner']} wins on the hand-verified gold set"),
+        f" — {rq1['baseline_issuetype_accuracy']:.1%} query-type accuracy (baseline classifier) vs "
+        f"{rq1['llm_issuetype_accuracy']:.1%} (LLM extraction), n={rq1['n_compared']} hand-labeled calls. "
+        f"The LLM's low macro-F1 ({rq1['llm_issuetype_f1_macro']:.2f}) suggests it collapses many of "
+        f"the 42 query types into a handful of common ones, while it does better at judging call "
+        f"resolution specifically ({rq1['llm_resolution_signal_accuracy']:.1%} accuracy)."
+    ])
+
+app.layout = html.Div(style={
+    "fontFamily": "-apple-system, Segoe UI, Arial, sans-serif", "backgroundColor": COLORS["bg"],
+    "minHeight": "100vh", "padding": "28px 32px",
+}, children=[
+
+    html.Div([
+        html.Div([
+            html.H1("KCC Advisory Process Mining", style={"margin": 0, "color": COLORS["text"], "fontSize": "28px"}),
+            html.Div("KERALA · 2024", style={
+                "backgroundColor": COLORS["accent"], "color": "white", "fontSize": "12px", "fontWeight": "700",
+                "padding": "4px 10px", "borderRadius": "999px", "letterSpacing": "0.5px", "marginLeft": "12px"}),
+        ], style={"display": "flex", "alignItems": "center"}),
+        html.Div("Semantic-aware LLM process mining over India's Kisan Call Centre helpline. "
+                 "This is a single-state deep dive, not a national survey — scoped to Kerala "
+                 "on purpose, using real 2024 data, so every number here is grounded in an "
+                 "actual verified call rather than a thin slice of five states at once. "
+                 "Shows where advisory calls loop, and where AI-generated answers actually "
+                 "match what farmers asked.",
+                 style={"color": COLORS["muted"], "marginTop": "6px", "fontSize": "14px", "maxWidth": "820px"}),
+    ], style={"marginBottom": "22px"}),
+
+    # ---- glossary: what the terms on this page actually mean ----
+    html.Div(style={**CARD_STYLE, "marginBottom": "22px", "backgroundColor": COLORS["bg"],
+                     "border": f"1px dashed {COLORS['border']}"}, children=[
+        html.Div("How to read this dashboard", style={**SECTION_TITLE, "fontSize": "15px"}),
+        html.Ul([
+            html.Li([html.B("Event / call: "), "one farmer phone call, automatically sorted into a "
+                     "category (e.g. Plant Protection, Nutrient Management)."]),
+            html.Li([html.B("Case: "), "every call about one crop in one district over the year — "
+                     "a stand-in for \"one farmer's journey\" since the raw data has no farmer ID "
+                     "(a disclosed limitation, not an oversight)."]),
+            html.Li([html.B("Loop rate: "), "the share of a case's calls that repeat a category "
+                     "already seen earlier in that same case — a proxy for \"this problem kept "
+                     "coming back.\""]),
+            html.Li([html.B("Duration: "), "days between a case's first and last call."]),
+            html.Li([html.B("Variant: "), "the exact sequence of categories a case followed. Two "
+                     "cases with the identical sequence share a variant — this is how you spot a "
+                     "common advisory pathway rather than a one-off."]),
+        ], style={"lineHeight": "1.8", "color": COLORS["text"], "marginBottom": 0, "fontSize": "13px"}),
+    ]),
+
+    # ---- headline findings, in plain English ----
+    html.Div(style={**CARD_STYLE, "marginBottom": "22px", "borderLeft": f"4px solid {COLORS['accent']}"}, children=[
+        html.Div("Key findings", style=SECTION_TITLE),
+        html.Ul([
+            html.Li([html.B(f"{n_cases_total} advisory cases"),
+                     f" traced across Kerala districts and crops, with a mean repeat-call "
+                     f"('loop') rate of {loop_df['loop_rate'].mean():.0%} — farmers frequently "
+                     f"call back about the same category of problem."]),
+            html.Li([html.B(f"{top_loop_text}"), " show the highest loop rates among crops with "
+                     "meaningful call volume, flagging where advisory quality likely needs the "
+                     "most attention."]),
+            rq1_finding,
+            html.Li([html.B(f"{overall_mismatch_pct:.1f}% of answers flagged"),
+                     " as a lexical query-answer mismatch — evidence that surface word-overlap can't "
+                     "reliably judge answer quality, motivating the semantic (NLI) approach."])
+            if overall_mismatch_pct is not None else None,
+        ], style={"lineHeight": "1.9", "color": COLORS["text"], "marginBottom": 0}),
+    ]),
+
+    # ---- filters ----
+    # (no state filter: every case here is Kerala, so a state dropdown with a
+    # single possible value would just be dead UI, not a real filter)
+    html.Div(style={"display": "flex", "gap": "12px", "marginBottom": "20px"}, children=[
+        dcc.Dropdown(id="crop-filter", options=[{"label": c, "value": c} for c in CROPS],
+                     multi=True, placeholder="Filter by crop", style={"flex": "1"}),
+    ]),
+
+    # ---- KPI row ----
+    html.Div(id="kpi-row", style={"display": "flex", "gap": "16px", "marginBottom": "22px", "flexWrap": "wrap"}),
+
+    # ---- loop rate chart (full width, top N only, sorted) ----
+    html.Div(style={**CARD_STYLE, "marginBottom": "22px"}, children=[
+        html.Div("Loop rate by crop", style=SECTION_TITLE),
+        html.Div(id="loop-rate-note", style={"color": COLORS["muted"], "fontSize": "13px",
+                                              "marginBottom": "10px"}),
+        dcc.Graph(id="loop-rate-chart", config={"displayModeBar": False}),
+    ]),
+
+    # ---- process explorer: the discovered process map, two ways to view it ----
+    html.Div(style={**CARD_STYLE, "marginBottom": "22px"}, children=[
+        html.Div("Process explorer", style=SECTION_TITLE),
+        html.Div("Automatically discovered from every call in the dataset (not hand-drawn). Boxes are "
+                  "categories, arrows are call-to-call transitions weighted by frequency, and a "
+                  "self-loop (an arrow from a box back to itself) means the same category recurring "
+                  "back-to-back. Filtered to the busiest categories/paths so the picture stays "
+                  "readable — the full unfiltered graph is genuinely unreadable at this scale, which "
+                  "is disclosed in the report rather than hidden.",
+                  style={"color": COLORS["muted"], "fontSize": "13px", "marginBottom": "14px"}),
+        dcc.RadioItems(
+            id="map-toggle",
+            options=[
+                {"label": " Simple map (recommended — call-frequency flow)", "value": "dfg"},
+                {"label": " Formal process model (Inductive Miner Petri net)", "value": "petri"},
+            ],
+            value="dfg", inline=False,
+            style={"marginBottom": "14px", "color": COLORS["text"], "fontSize": "14px"},
+            labelStyle={"display": "block", "marginBottom": "4px"},
+        ),
+        html.Div(id="process-map-note", style={"color": COLORS["muted"], "fontSize": "13px",
+                                                 "marginBottom": "10px"}),
+        html.Div(id="process-map-legend"),
+        html.Img(id="process-map", style={"width": "100%", "borderRadius": "8px"}),
+    ]),
+
+    # ---- variant explorer: which advisory PATTERNS recur across many cases ----
+    html.Div(style={**CARD_STYLE, "marginBottom": "22px"}, children=[
+        html.Div("Variant explorer", style=SECTION_TITLE),
+        html.Div("The case explorer below shows one case's real history. This is the opposite view: "
+                  "which exact sequences of categories show up again and again ACROSS cases. A short "
+                  "bar means a rare, one-off pattern; a long bar is a well-worn advisory pathway worth "
+                  "standardizing guidance for.",
+                  style={"color": COLORS["muted"], "fontSize": "13px", "marginBottom": "14px"}),
+        dcc.Graph(id="variant-chart", config={"displayModeBar": False}),
+        html.Div("Top variants in detail:", style={"fontWeight": "700", "margin": "16px 0 8px",
+                                                     "color": COLORS["text"]}),
+        dash_table.DataTable(
+            id="variant-table", page_size=8,
+            style_cell={"textAlign": "left", "whiteSpace": "normal", "maxWidth": "420px",
+                        "fontFamily": "-apple-system, Segoe UI, Arial, sans-serif", "fontSize": "13px",
+                        "padding": "8px"},
+            style_header={"backgroundColor": COLORS["bg"], "fontWeight": "700"},
+            style_table={"overflowX": "auto"},
+        ),
+    ]),
+
+    # ---- case summary table (no raw variant text -- just the scannable numbers) ----
+    html.Div(style={**CARD_STYLE, "marginBottom": "22px"}, children=[
+        html.Div("Busiest cases (most events = most back-and-forth)", style=SECTION_TITLE),
+        html.Div("Pick any case in the explorer below to see its actual call-by-call history.",
+                  style={"color": COLORS["muted"], "fontSize": "13px", "marginBottom": "10px"}),
+        dash_table.DataTable(
+            id="case-summary-table", page_size=8,
+            style_cell={"textAlign": "left", "fontFamily": "-apple-system, Segoe UI, Arial, sans-serif",
+                        "fontSize": "13px", "padding": "8px"},
+            style_header={"backgroundColor": COLORS["bg"], "fontWeight": "700"},
+            style_table={"overflowX": "auto"},
+        ),
+    ]),
+
+    # ---- interactive case explorer ----
+    html.Div(style={**CARD_STYLE, "marginBottom": "22px"}, children=[
+        html.Div("Case explorer — walk through a single case's real call history", style=SECTION_TITLE),
+        html.Div("A \"case\" here is every call about one crop in one district over the year "
+                 "(not a single farmer's journey — a known limitation, see report). Pick one below "
+                 "to see its calls in order, colored by category, with the actual query/answer text.",
+                 style={"color": COLORS["muted"], "fontSize": "13px", "marginBottom": "14px"}),
+        dcc.Dropdown(id="case-select", options=CASE_OPTIONS, value=DEFAULT_CASE, clearable=False,
+                     placeholder="Select a case", style={"marginBottom": "14px"}),
+        html.Div(id="case-stats-row", style={"display": "flex", "gap": "16px", "marginBottom": "16px",
+                                              "flexWrap": "wrap"}),
+        dcc.Graph(id="case-timeline", config={"displayModeBar": False}),
+        html.Div("Call-by-call detail (in order):", style={"fontWeight": "700", "margin": "16px 0 8px",
+                                                             "color": COLORS["text"]}),
+        dash_table.DataTable(
+            id="case-detail-table", page_size=10,
+            style_cell={"textAlign": "left", "whiteSpace": "normal", "maxWidth": "360px",
+                        "fontFamily": "-apple-system, Segoe UI, Arial, sans-serif", "fontSize": "13px",
+                        "padding": "8px"},
+            style_header={"backgroundColor": COLORS["bg"], "fontWeight": "700"},
+            style_table={"overflowX": "auto"},
+        ),
+    ]),
+
+    # ---- LLM extraction sample, if available ----
+    html.Div(style={**CARD_STYLE, "marginBottom": "22px"}, children=[
+        html.Div("LLM extraction sample (RQ1, path B)", style=SECTION_TITLE),
+        dash_table.DataTable(
+            id="llm-table",
+            data=llm_df.head(25).to_dict("records") if llm_df is not None else [],
+            columns=[{"name": c, "id": c} for c in llm_df.columns] if llm_df is not None else [],
+            page_size=6,
+            style_cell={"textAlign": "left", "whiteSpace": "normal", "maxWidth": "320px", "fontSize": "13px"},
+            style_header={"backgroundColor": COLORS["bg"], "fontWeight": "700"},
+            style_table={"overflowX": "auto"},
+        ) if llm_df is not None else html.Div(
+            "No LLM extraction output found yet — run src/llm_extraction.py first.",
+            style={"color": COLORS["muted"]}),
+    ]),
+
+    # ---- live demo ----
+    html.Div(style=CARD_STYLE, children=[
+        html.Div("Try it — live classifier + retrieval demo", style=SECTION_TITLE),
+        html.Div("The classifier only sorts a query into a category — it doesn't invent farming advice, "
+                  "and shouldn't (a confidently wrong fertilizer recommendation is worse than none). What "
+                  "it can do honestly is show real answers KCC actually gave to similar past questions.",
+                  style={"color": COLORS["muted"], "fontSize": "13px", "marginBottom": "14px"}),
+        html.Div(style={"display": "flex", "gap": "16px", "flexWrap": "wrap"}, children=[
+            dcc.Textarea(id="live-query", placeholder="Type a farmer query here, e.g. "
+                         "'coconut tree leaves turning yellow, what fertilizer should I use'",
+                         style={"flex": "1", "minWidth": "280px", "height": "90px", "borderRadius": "8px",
+                                "border": f"1px solid {COLORS['border']}", "padding": "10px"}),
+            html.Div(id="live-query-result", style={
+                "flex": "1", "minWidth": "220px", "padding": "12px", "backgroundColor": COLORS["bg"],
+                "borderRadius": "8px", "color": COLORS["text"]}),
+        ]),
+        html.Div("Similar real past cases (real KCC answers, retrieved by text similarity):",
+                  style={"fontWeight": "700", "margin": "16px 0 8px", "color": COLORS["text"]}),
+        dash_table.DataTable(
+            id="live-query-similar", page_size=5,
+            style_cell={"textAlign": "left", "whiteSpace": "normal", "maxWidth": "360px",
+                        "fontFamily": "-apple-system, Segoe UI, Arial, sans-serif", "fontSize": "13px",
+                        "padding": "8px"},
+            style_header={"backgroundColor": COLORS["bg"], "fontWeight": "700"},
+            style_table={"overflowX": "auto"},
+        ),
+    ]),
+])
+
+
+@app.callback(
+    Output("kpi-row", "children"),
+    Output("loop-rate-chart", "figure"),
+    Output("loop-rate-note", "children"),
+    Output("case-summary-table", "data"),
+    Output("case-summary-table", "columns"),
+    Input("crop-filter", "value"),
+)
+def update_dashboard(crops):
+    ldf, ddf, vdf, mdf = loop_df, dur_df, var_df, mismatch_df
+    if crops:
+        ldf = ldf[ldf["crop"].isin(crops)]
+        ddf = ddf[ddf["crop"].isin(crops)]
+        vdf = vdf[vdf["crop"].isin(crops)]
+        if mdf is not None:
+            mdf = mdf[mdf["Crop"].isin(crops)]
+
+    n_cases = ldf["case_id"].nunique()
+    mean_loop = ldf["loop_rate"].mean() if len(ldf) else 0
+    mean_dur = ddf["duration_days"].mean() if len(ddf) else 0
+    pct_mismatch = (mdf["is_mismatch"].mean() * 100) if mdf is not None and len(mdf) else None
+
+    kpis = [
+        kpi_tile(f"{n_cases}", "Cases"),
+        kpi_tile(f"{mean_loop:.2f}", "Mean loop rate"),
+        kpi_tile(f"{mean_dur:.0f} days", "Mean case duration"),
+    ]
+    if pct_mismatch is not None:
+        kpis.append(kpi_tile(f"{pct_mismatch:.1f}%", "Flagged mismatches", color="#dc2626"))
+
+    # top 15 crops by loop rate, restricted to crops with enough cases to be meaningful --
+    # but if the current selection doesn't even have 5 cases in ANY crop (e.g. one small
+    # crop picked in the filter), fall back to showing what's actually there instead of an
+    # empty chart, and say so explicitly rather than leaving the old "5+ cases" caption up
+    max_cases = ldf.groupby("crop")["case_id"].nunique().max() if len(ldf) else 0
+    threshold = min(5, max_cases) if max_cases else 1
+    crop_stats = ldf.groupby("crop").agg(loop_rate=("loop_rate", "mean"),
+                                          n_cases=("case_id", "nunique")).reset_index()
+    crop_stats = crop_stats[crop_stats["n_cases"] >= threshold]
+    crop_stats = crop_stats.sort_values("loop_rate", ascending=True).tail(15)
+    if threshold < 5:
+        note = (f"This selection has no crop with 5+ cases, so showing all {len(crop_stats)} crop(s) "
+                 f"in the current filter instead.")
+    else:
+        note = f"Crops with 5+ cases, top 15 of {len(crop_stats)} shown."
+
+    if len(crop_stats) == 0:
+        fig = go.Figure()
+        fig.update_layout(height=200, plot_bgcolor="white", paper_bgcolor="white",
+                           annotations=[dict(text="No cases match this filter.", showarrow=False,
+                                              font=dict(color=COLORS["muted"]))])
+    else:
+        fig = px.bar(crop_stats, x="loop_rate", y="crop", orientation="h",
+                     color_discrete_sequence=[COLORS["accent"]],
+                     text=crop_stats["loop_rate"].map(lambda v: f"{v:.2f}"),
+                     labels={"loop_rate": "Mean loop rate", "crop": ""})
+        # a genuinely-zero loop rate (e.g. every case in this selection had only
+        # one call, so no repeat was even possible) draws a zero-length bar --
+        # without a fixed axis range, Plotly auto-scales a single all-zero bar
+        # to a nonsensical [-1, 1] range and the bar vanishes entirely, looking
+        # like a rendering bug rather than an honest "the rate really is 0"
+        max_rate = max(crop_stats["loop_rate"].max(), 0.05)
+        fig.update_traces(textposition="outside", cliponaxis=False)
+        fig.update_xaxes(range=[0, max_rate * 1.25])
+        fig.update_layout(margin=dict(l=10, r=10, t=10, b=10),
+                           plot_bgcolor="white", paper_bgcolor="white", height=420)
+
+    case_summary = ldf.merge(ddf[["case_id", "duration_days"]], on="case_id", how="left")
+    case_summary = case_summary.sort_values("n_events", ascending=False)
+    cols = ["case_id", "n_events", "loop_rate", "duration_days", "crop", "state"]
+    case_summary = case_summary[cols].copy()
+    case_summary["loop_rate"] = case_summary["loop_rate"].round(2)
+    table_data = case_summary.to_dict("records")
+    table_cols = [{"name": c, "id": c} for c in cols]
+
+    return kpis, fig, note, table_data, table_cols
+
+
+def _encode_png(path):
+    with open(path, "rb") as f:
+        return f"data:image/png;base64,{base64.b64encode(f.read()).decode()}"
+
+
+PETRI_LEGEND = html.Div([
+    html.Div("Shape key (this is formal notation, not the recommended view):",
+             style={"fontWeight": "700", "fontSize": "13px", "marginBottom": "6px", "color": COLORS["text"]}),
+    html.Ul([
+        html.Li([html.B("Circle with a black dot: "), "the process starts here."]),
+        html.Li([html.B("Solid black rectangle: "), "an actual call category happening (a \"transition\")."]),
+        html.Li([html.B("Plain empty circle: "), "a waiting point between steps — not a real event itself, "
+                 "just formal bookkeeping the algorithm needs."]),
+        html.Li([html.B("Double circle with a black square: "), "the process ends here."]),
+    ], style={"fontSize": "13px", "color": COLORS["muted"], "lineHeight": "1.7", "marginBottom": "12px"}),
+], style={"backgroundColor": COLORS["bg"], "border": f"1px dashed {COLORS['border']}",
+          "borderRadius": "8px", "padding": "12px 16px", "marginBottom": "12px"})
+
+
+@app.callback(
+    Output("process-map", "src"),
+    Output("process-map-note", "children"),
+    Output("process-map-legend", "children"),
+    Input("map-toggle", "value"),
+    Input("crop-filter", "value"),
+)
+def update_process_map(which, crops):
+    legend = PETRI_LEGEND if which == "petri" else None
+    # No crop filter -> serve the pre-rendered full-dataset image (instant, and
+    # matches exactly what's in the report). WITH a crop filter, actually
+    # rediscover the process map live from just that subset -- confirmed this
+    # is fast enough to do on every filter change (well under a second even
+    # for the busiest crop), so filtering genuinely changes the diagram
+    # instead of just re-showing the same full-dataset picture.
+    if not crops:
+        filename = "process_model.png" if which == "petri" else "process_map.png"
+        image_path = os.path.join(OUT, filename)
+        return (_encode_png(image_path) if os.path.exists(image_path) else ""), "", legend
+
+    subset = raw_df[raw_df["Crop"].isin(crops)]
+    n_calls = len(subset)
+    n_cases = subset["case_id"].nunique()
+    if n_calls < 2:
+        return "", (f"Only {n_calls} call{'s' if n_calls != 1 else ''} for this selection — there's no "
+                     f"call-to-call transition to draw a flow from. See the KPI tiles and case explorer "
+                     f"above for what that one call actually was."), None
+
+    log_df = build_event_log_df(subset, activity_col=ACTIVITY_COL, date_col="CreatedOn")
+
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp_path = os.path.join(tmp, "map.png")
+        try:
+            if which == "petri":
+                _, _, net, im, fm = discover_model(log_df)
+                export_process_map(net, im, fm, out_path=tmp_path)
+            else:
+                discover_and_export_dfg(log_df, out_path=tmp_path)
+            note = f"Live-generated from {n_calls} calls across {n_cases} case(s) matching this filter."
+            return _encode_png(tmp_path), note, legend
+        except Exception:
+            # a very small/sparse filtered subset can occasionally have too
+            # little structure for the miner to draw -- explain rather than
+            # silently leaving a blank box
+            return "", (f"Couldn't build a process diagram from this selection ({n_calls} calls, "
+                         f"{n_cases} case(s)) — too little structure for the miner to draw a flow from. "
+                         f"Try a broader crop selection."), None
+
+
+@app.callback(
+    Output("variant-chart", "figure"),
+    Output("variant-table", "data"),
+    Output("variant-table", "columns"),
+    Input("crop-filter", "value"),
+)
+def update_variant_explorer(crops):
+    vc = variant_counts
+    vdf_scope = var_df
+    if crops:
+        vdf_scope = vdf_scope[vdf_scope["crop"].isin(crops)]
+        vc = (vdf_scope.groupby("variant")
+              .agg(n_cases=("case_id", "nunique"),
+                   example_crops=("crop", lambda s: ", ".join(sorted(set(s))[:3])))
+              .reset_index())
+        vc["n_steps"] = vc["variant"].str.count("->") + 1
+        total = vdf_scope["case_id"].nunique()
+        vc["pct_of_cases"] = (vc["n_cases"] / total * 100).round(1) if total else 0
+        vc = vc.sort_values("n_cases", ascending=False).reset_index(drop=True)
+        vc.insert(0, "rank", range(1, len(vc) + 1))
+
+    top15 = vc.head(15).copy()
+    top15["short_label"] = [f"#{r.rank} ({r.n_steps} step{'s' if r.n_steps != 1 else ''})"
+                             for r in top15.itertuples()]
+    fig = px.bar(top15.sort_values("n_cases"), x="n_cases", y="short_label", orientation="h",
+                 color_discrete_sequence=[COLORS["accent2"]],
+                 hover_data={"variant": True, "example_crops": True},
+                 labels={"n_cases": "Number of cases following this exact sequence", "short_label": ""})
+    fig.update_layout(margin=dict(l=10, r=10, t=10, b=10),
+                       plot_bgcolor="white", paper_bgcolor="white", height=420)
+
+    table = vc.head(30).copy()
+    table["variant"] = table["variant"].apply(lambda t: truncate(t, 200))
+    table = table.rename(columns={"rank": "Rank", "n_cases": "# cases", "pct_of_cases": "% of cases",
+                                   "n_steps": "Steps", "example_crops": "Example crops",
+                                   "variant": "Sequence"})
+    table = table[["Rank", "# cases", "% of cases", "Steps", "Example crops", "Sequence"]]
+    table_cols = [{"name": c, "id": c} for c in table.columns]
+
+    return fig, table.to_dict("records"), table_cols
+
+
+@app.callback(
+    Output("case-select", "options"),
+    Output("case-select", "value"),
+    Input("crop-filter", "value"),
+)
+def update_case_options(crops):
+    df = case_options_df
+    if crops:
+        df = df[df["crop"].isin(crops)]
+    options = [
+        {"label": f"{r.case_id}  —  {r.n_events} events, loop rate {r.loop_rate:.0%}", "value": r.case_id}
+        for r in df.itertuples()
+    ]
+    default = df.iloc[0]["case_id"] if len(df) else None
+    return options, default
+
+
+@app.callback(
+    Output("case-stats-row", "children"),
+    Output("case-timeline", "figure"),
+    Output("case-detail-table", "data"),
+    Output("case-detail-table", "columns"),
+    Input("case-select", "value"),
+)
+def update_case_explorer(case_id):
+    empty_fig = go.Figure()
+    empty_fig.update_layout(height=200, plot_bgcolor="white", paper_bgcolor="white")
+    if not case_id:
+        return [], empty_fig, [], []
+
+    events = raw_df[raw_df["case_id"] == case_id].sort_values("CreatedOn").reset_index(drop=True)
+    if len(events) == 0:
+        return [html.Div("No events found for this case.", style={"color": COLORS["muted"]})], empty_fig, [], []
+
+    loop_row = loop_df[loop_df["case_id"] == case_id]
+    dur_row = dur_df[dur_df["case_id"] == case_id]
+    loop_rate = float(loop_row["loop_rate"].iloc[0]) if len(loop_row) else None
+    duration = int(dur_row["duration_days"].iloc[0]) if len(dur_row) else None
+
+    stats = [
+        kpi_tile(f"{len(events)}", "Calls in this case"),
+        kpi_tile(f"{loop_rate:.0%}" if loop_rate is not None else "—", "Loop rate"),
+        kpi_tile(f"{duration} days" if duration is not None else "—", "Duration"),
+        kpi_tile(f"{events['Crop'].iloc[0]}", "Crop", color=COLORS["muted"]),
+        kpi_tile(f"{events['DistrictName'].iloc[0]}", "District", color=COLORS["muted"]),
+    ]
+
+    events["step"] = range(1, len(events) + 1)
+    events["hover_query"] = events["QueryText"].apply(lambda t: truncate(t, 100))
+    fig = px.scatter(
+        events, x="CreatedOn", y=[1] * len(events), color=ACTIVITY_COL,
+        hover_data={"step": True, "hover_query": True, "CreatedOn": True, ACTIVITY_COL: True},
+        labels={"CreatedOn": "Call date", ACTIVITY_COL: "Category"},
+    )
+    fig.update_traces(marker=dict(size=14, line=dict(width=1, color="white")))
+    # thin connecting line to show the sequence, drawn behind the colored points
+    fig.add_trace(go.Scatter(x=events["CreatedOn"], y=[1] * len(events), mode="lines",
+                              line=dict(color=COLORS["border"], width=1), showlegend=False, hoverinfo="skip"))
+    fig.data = (fig.data[-1],) + fig.data[:-1]  # push the line to the back
+    fig.update_yaxes(visible=False, range=[0.5, 1.5])
+    fig.update_layout(height=220, plot_bgcolor="white", paper_bgcolor="white",
+                       margin=dict(l=10, r=10, t=10, b=10), legend_title_text="Category")
+
+    detail = events[["CreatedOn", ACTIVITY_COL, "QueryText", "KccAns"]].copy()
+    detail["CreatedOn"] = detail["CreatedOn"].dt.strftime("%Y-%m-%d")
+    detail["QueryText"] = detail["QueryText"].apply(lambda t: truncate(t, 160))
+    detail["KccAns"] = detail["KccAns"].apply(lambda t: truncate(t, 160))
+    detail = detail.rename(columns={"CreatedOn": "Date", ACTIVITY_COL: "Category",
+                                     "QueryText": "Query", "KccAns": "Answer"})
+    detail_cols = [{"name": c, "id": c} for c in detail.columns]
+
+    return stats, fig, detail.to_dict("records"), detail_cols
+
+
+@app.callback(
+    Output("live-query-result", "children"),
+    Output("live-query-similar", "data"),
+    Output("live-query-similar", "columns"),
+    Input("live-query", "value"),
+)
+def live_query_demo(text):
+    if not text or not text.strip():
+        return "Type a query above to see the classifier's live prediction.", [], []
+    if classifier is None:
+        return "Baseline classifier not found — run src/baseline_classifier.py first.", [], []
+
+    pred_cat, pred_qtype = classifier.predict([text])
+    result = html.Div([
+        html.Div([html.B("Predicted category: "), pred_cat[0]]),
+        html.Div([html.B("Predicted query type: "), pred_qtype[0]], style={"marginTop": "6px"}),
+    ])
+
+    similar = retriever.query(text, k=5)
+    similar = similar[similar["similarity"] > 0.03]  # drop near-zero matches -- not actually similar
+    if len(similar) == 0:
+        cols = [{"name": c, "id": c} for c in ["Note"]]
+        return result, [{"Note": "No sufficiently similar past query found in the dataset for this one."}], cols
+
+    similar = similar.copy()
+    similar["similarity"] = (similar["similarity"] * 100).round(0).astype(int).astype(str) + "%"
+    similar["QueryText"] = similar["QueryText"].apply(lambda t: truncate(t, 140))
+    similar["KccAns"] = similar["KccAns"].apply(lambda t: truncate(t, 220))
+    similar = similar.rename(columns={"QueryText": "Similar past query", "KccAns": "Real answer given",
+                                       "Crop": "Crop", "Category": "Category", "similarity": "Match"})
+    similar = similar[["Match", "Crop", "Category", "Similar past query", "Real answer given"]]
+    table_cols = [{"name": c, "id": c} for c in similar.columns]
+
+    return result, similar.to_dict("records"), table_cols
+
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 8050))
+    debug = os.environ.get("DASH_DEBUG", "0") == "1"
+    app.run(host="0.0.0.0", port=port, debug=debug)

@@ -1,0 +1,23 @@
+# Core pipeline -- installs cleanly anywhere, no external model downloads needed
+pandas>=3.0
+numpy>=2.0
+scikit-learn>=1.9
+joblib>=1.6
+requests>=2.31
+pm4py>=2.7
+dash>=4.0
+plotly>=7.0
+python-dotenv>=1.0
+
+# Needed only for the real (non-fallback) versions of these two steps --
+# these require HuggingFace Hub access to download model weights, so they
+# only work on a machine with normal internet, not the dev sandbox this
+# was built in:
+transformers>=4.40
+torch>=2.2
+sentence-transformers>=3.0
+faiss-cpu>=1.8
+
+# System dependency (not pip-installable): graphviz
+#   macOS:  brew install graphviz
+#   used by pm4py to render the discovered process map as an image

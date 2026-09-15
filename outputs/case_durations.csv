@@ -1,0 +1,712 @@
+case_id,duration_days,n_events,crop,state
+ALAPPUZHA_Amaranthus/Grain Amaranthus,317,3,Amaranthus/Grain Amaranthus,KERALA
+ALAPPUZHA_Arecanut,128,2,Arecanut,KERALA
+ALAPPUZHA_Avacado,0,1,Avacado,KERALA
+ALAPPUZHA_BAJRA NAPIER HYBRID,0,1,BAJRA NAPIER HYBRID,KERALA
+ALAPPUZHA_Banana,354,31,Banana,KERALA
+ALAPPUZHA_Betel Vine,0,1,Betel Vine,KERALA
+ALAPPUZHA_Bhindi(Okra/Ladysfinger),222,9,Bhindi(Okra/Ladysfinger),KERALA
+ALAPPUZHA_Bitter Gourd,304,6,Bitter Gourd,KERALA
+ALAPPUZHA_Bottle Gourd,0,1,Bottle Gourd,KERALA
+ALAPPUZHA_Brinjal,364,14,Brinjal,KERALA
+ALAPPUZHA_Cabbage,4,2,Cabbage,KERALA
+ALAPPUZHA_Capsicum,0,1,Capsicum,KERALA
+ALAPPUZHA_Cauliflower,0,1,Cauliflower,KERALA
+ALAPPUZHA_Chillies,290,18,Chillies,KERALA
+ALAPPUZHA_China Astor,0,1,China Astor,KERALA
+ALAPPUZHA_Coconut,342,46,Coconut,KERALA
+"ALAPPUZHA_Colocasia (Arvi, Arbi)",144,4,"Colocasia (Arvi, Arbi)",KERALA
+ALAPPUZHA_Cowpea (Vegetable),203,7,Cowpea (Vegetable),KERALA
+ALAPPUZHA_Crossandra,0,1,Crossandra,KERALA
+ALAPPUZHA_Cucumber,234,2,Cucumber,KERALA
+ALAPPUZHA_Curry Leaf,211,5,Curry Leaf,KERALA
+ALAPPUZHA_Custard Apple,0,1,Custard Apple,KERALA
+ALAPPUZHA_Drum Stick,0,1,Drum Stick,KERALA
+ALAPPUZHA_Fresh Water,0,2,Fresh Water,KERALA
+ALAPPUZHA_Ginger,147,4,Ginger,KERALA
+ALAPPUZHA_Grape,2,2,Grape,KERALA
+ALAPPUZHA_Groundnut (pea nut/mung phalli),0,1,Groundnut (pea nut/mung phalli),KERALA
+ALAPPUZHA_Guava,164,8,Guava,KERALA
+ALAPPUZHA_Ivy Gourd,209,2,Ivy Gourd,KERALA
+ALAPPUZHA_Jack Fruit,341,10,Jack Fruit,KERALA
+ALAPPUZHA_Jamun,0,1,Jamun,KERALA
+ALAPPUZHA_Jasmine,0,1,Jasmine,KERALA
+ALAPPUZHA_Kokum,241,4,Kokum,KERALA
+ALAPPUZHA_Mango,275,8,Mango,KERALA
+ALAPPUZHA_Neem,0,1,Neem,KERALA
+ALAPPUZHA_Nutmeg,0,1,Nutmeg,KERALA
+ALAPPUZHA_Paddy (Dhan),134,5,Paddy (Dhan),KERALA
+ALAPPUZHA_Papaya,0,1,Papaya,KERALA
+ALAPPUZHA_Passion Fruit,0,1,Passion Fruit,KERALA
+ALAPPUZHA_Pepper,319,12,Pepper,KERALA
+ALAPPUZHA_Pumpkin,0,1,Pumpkin,KERALA
+ALAPPUZHA_Ridge Gourd,192,2,Ridge Gourd,KERALA
+ALAPPUZHA_Rose,305,60,Rose,KERALA
+ALAPPUZHA_Sapota,0,1,Sapota,KERALA
+ALAPPUZHA_Snake Gourd,328,3,Snake Gourd,KERALA
+ALAPPUZHA_Sponge Gourd,0,1,Sponge Gourd,KERALA
+ALAPPUZHA_Sugarcane (Noble Cane),0,1,Sugarcane (Noble Cane),KERALA
+ALAPPUZHA_Tapioca (Cassava),0,1,Tapioca (Cassava),KERALA
+ALAPPUZHA_Tomato,31,2,Tomato,KERALA
+ALAPPUZHA_Turkey,0,1,Turkey,KERALA
+ALAPPUZHA_Turmeric,0,1,Turmeric,KERALA
+ERNAKULAM_Acid Lime,143,4,Acid Lime,KERALA
+ERNAKULAM_African Sarson,0,1,African Sarson,KERALA
+ERNAKULAM_Almond,64,2,Almond,KERALA
+ERNAKULAM_Aloe Vera,135,2,Aloe Vera,KERALA
+ERNAKULAM_Amaranthus/Grain Amaranthus,238,4,Amaranthus/Grain Amaranthus,KERALA
+ERNAKULAM_Amarphophallus (Surankand/Elephant Foot Yam),94,3,Amarphophallus (Surankand/Elephant Foot Yam),KERALA
+ERNAKULAM_Anthurium,107,3,Anthurium,KERALA
+ERNAKULAM_Aonla,0,1,Aonla,KERALA
+ERNAKULAM_Arecanut,354,38,Arecanut,KERALA
+ERNAKULAM_Ash Gourd (Petha),182,3,Ash Gourd (Petha),KERALA
+ERNAKULAM_Avacado,60,2,Avacado,KERALA
+ERNAKULAM_Banana,362,126,Banana,KERALA
+ERNAKULAM_Beet Root (Garden Beet/Stock Beet),4,2,Beet Root (Garden Beet/Stock Beet),KERALA
+ERNAKULAM_Ber,0,2,Ber,KERALA
+ERNAKULAM_Betel Vine,0,1,Betel Vine,KERALA
+ERNAKULAM_Bhindi(Okra/Ladysfinger),216,20,Bhindi(Okra/Ladysfinger),KERALA
+ERNAKULAM_Bitter Gourd,249,8,Bitter Gourd,KERALA
+ERNAKULAM_Bottle Gourd,0,1,Bottle Gourd,KERALA
+"ERNAKULAM_Bovine(Cow,Buffalo)",250,2,"Bovine(Cow,Buffalo)",KERALA
+ERNAKULAM_Brinjal,329,18,Brinjal,KERALA
+ERNAKULAM_Carrot,0,1,Carrot,KERALA
+ERNAKULAM_Cashew,0,1,Cashew,KERALA
+ERNAKULAM_Cauliflower,0,1,Cauliflower,KERALA
+ERNAKULAM_Chillies,314,22,Chillies,KERALA
+ERNAKULAM_Citrus,83,3,Citrus,KERALA
+ERNAKULAM_Cluster Bean,0,2,Cluster Bean,KERALA
+ERNAKULAM_Cocoa,167,11,Cocoa,KERALA
+ERNAKULAM_Coconut,361,128,Coconut,KERALA
+"ERNAKULAM_Colocasia (Arvi, Arbi)",211,4,"Colocasia (Arvi, Arbi)",KERALA
+ERNAKULAM_Cowpea (Vegetable),331,62,Cowpea (Vegetable),KERALA
+ERNAKULAM_Cucumber,357,23,Cucumber,KERALA
+ERNAKULAM_Curry Leaf,304,5,Curry Leaf,KERALA
+ERNAKULAM_Custard Apple,112,2,Custard Apple,KERALA
+ERNAKULAM_DatePalm,0,1,DatePalm,KERALA
+ERNAKULAM_Drum Stick,139,7,Drum Stick,KERALA
+ERNAKULAM_Fig,214,3,Fig,KERALA
+ERNAKULAM_Ginger,199,6,Ginger,KERALA
+ERNAKULAM_Grape,116,3,Grape,KERALA
+ERNAKULAM_Greater Yam,0,1,Greater Yam,KERALA
+ERNAKULAM_Guava,254,15,Guava,KERALA
+ERNAKULAM_Indian Bean (Vegetable),16,2,Indian Bean (Vegetable),KERALA
+ERNAKULAM_Ivy Gourd,176,5,Ivy Gourd,KERALA
+ERNAKULAM_Jack Fruit,308,14,Jack Fruit,KERALA
+ERNAKULAM_Jamun,0,1,Jamun,KERALA
+ERNAKULAM_Jasmine,0,1,Jasmine,KERALA
+ERNAKULAM_Kaner,0,1,Kaner,KERALA
+ERNAKULAM_Kokum,0,1,Kokum,KERALA
+ERNAKULAM_Large Cardamom,0,1,Large Cardamom,KERALA
+ERNAKULAM_Lemon,221,2,Lemon,KERALA
+ERNAKULAM_Litchi,156,5,Litchi,KERALA
+ERNAKULAM_Little Millet (Samai/Kutki/kodo-kutki),0,1,Little Millet (Samai/Kutki/kodo-kutki),KERALA
+ERNAKULAM_Mango,352,54,Mango,KERALA
+ERNAKULAM_Marigold,124,4,Marigold,KERALA
+ERNAKULAM_Mosambi,0,1,Mosambi,KERALA
+ERNAKULAM_Napier Grass,0,1,Napier Grass,KERALA
+ERNAKULAM_Nutmeg,357,64,Nutmeg,KERALA
+ERNAKULAM_Other,254,4,Other,KERALA
+ERNAKULAM_POULTRY  FARM,0,1,POULTRY  FARM,KERALA
+ERNAKULAM_Paddy (Dhan),320,12,Paddy (Dhan),KERALA
+ERNAKULAM_Papaya,328,13,Papaya,KERALA
+ERNAKULAM_Passion Fruit,250,2,Passion Fruit,KERALA
+ERNAKULAM_Pepper,298,14,Pepper,KERALA
+ERNAKULAM_Pineapple,199,8,Pineapple,KERALA
+ERNAKULAM_Pomegranate,0,1,Pomegranate,KERALA
+ERNAKULAM_Pumpkin,189,2,Pumpkin,KERALA
+ERNAKULAM_Ridge Gourd,123,2,Ridge Gourd,KERALA
+ERNAKULAM_Rose,184,6,Rose,KERALA
+ERNAKULAM_Rubber,252,3,Rubber,KERALA
+ERNAKULAM_Saffron,0,1,Saffron,KERALA
+ERNAKULAM_Sandal Wood,179,3,Sandal Wood,KERALA
+ERNAKULAM_Sapota,149,5,Sapota,KERALA
+ERNAKULAM_Sesame (Gingelly/Til)/Sesamum,168,2,Sesame (Gingelly/Til)/Sesamum,KERALA
+ERNAKULAM_Snake Gourd,249,2,Snake Gourd,KERALA
+ERNAKULAM_Sponge Gourd,0,1,Sponge Gourd,KERALA
+ERNAKULAM_Tapioca (Cassava),263,14,Tapioca (Cassava),KERALA
+ERNAKULAM_Teak,199,3,Teak,KERALA
+ERNAKULAM_Tomato,300,18,Tomato,KERALA
+ERNAKULAM_Turmeric,0,1,Turmeric,KERALA
+IDUKKI_Acid Lime,0,1,Acid Lime,KERALA
+IDUKKI_Amaranthus/Grain Amaranthus,54,2,Amaranthus/Grain Amaranthus,KERALA
+IDUKKI_Amarphophallus (Surankand/Elephant Foot Yam),0,1,Amarphophallus (Surankand/Elephant Foot Yam),KERALA
+IDUKKI_Apple,21,2,Apple,KERALA
+IDUKKI_Apricot,0,1,Apricot,KERALA
+IDUKKI_Arecanut,290,10,Arecanut,KERALA
+IDUKKI_Avacado,297,5,Avacado,KERALA
+IDUKKI_Bail,0,1,Bail,KERALA
+IDUKKI_Banana,341,22,Banana,KERALA
+IDUKKI_Beans,136,2,Beans,KERALA
+IDUKKI_Betel Vine,0,1,Betel Vine,KERALA
+IDUKKI_Bhindi(Okra/Ladysfinger),246,7,Bhindi(Okra/Ladysfinger),KERALA
+IDUKKI_Bitter Gourd,347,7,Bitter Gourd,KERALA
+IDUKKI_Brinjal,0,1,Brinjal,KERALA
+IDUKKI_Cabbage,0,2,Cabbage,KERALA
+IDUKKI_Cardamom,342,77,Cardamom,KERALA
+IDUKKI_Cashew,3,3,Cashew,KERALA
+IDUKKI_Chillies,195,5,Chillies,KERALA
+IDUKKI_Clove,0,2,Clove,KERALA
+IDUKKI_Cocoa,268,18,Cocoa,KERALA
+IDUKKI_Coconut,300,26,Coconut,KERALA
+IDUKKI_Coffee,0,1,Coffee,KERALA
+IDUKKI_Cowpea (Vegetable),350,14,Cowpea (Vegetable),KERALA
+IDUKKI_Cucumber,154,4,Cucumber,KERALA
+IDUKKI_Dog,0,2,Dog,KERALA
+IDUKKI_Drum Stick,0,1,Drum Stick,KERALA
+IDUKKI_Ginger,256,9,Ginger,KERALA
+IDUKKI_Grape,0,1,Grape,KERALA
+IDUKKI_Indian Bean (Vegetable),0,1,Indian Bean (Vegetable),KERALA
+IDUKKI_Ivy Gourd,99,3,Ivy Gourd,KERALA
+IDUKKI_Jack Fruit,14,2,Jack Fruit,KERALA
+IDUKKI_Large Cardamom,68,4,Large Cardamom,KERALA
+IDUKKI_Lemon,0,1,Lemon,KERALA
+IDUKKI_Mango,254,10,Mango,KERALA
+IDUKKI_Mentha,0,1,Mentha,KERALA
+IDUKKI_Nutmeg,337,19,Nutmeg,KERALA
+IDUKKI_POULTRY  FARM,0,1,POULTRY  FARM,KERALA
+IDUKKI_Paddy (Dhan),0,1,Paddy (Dhan),KERALA
+IDUKKI_Papaya,143,3,Papaya,KERALA
+IDUKKI_Pepper,343,19,Pepper,KERALA
+IDUKKI_Pomegranate,62,3,Pomegranate,KERALA
+IDUKKI_Rubber,243,8,Rubber,KERALA
+IDUKKI_Sandal Wood,68,2,Sandal Wood,KERALA
+IDUKKI_Sapota,0,1,Sapota,KERALA
+IDUKKI_Tapioca (Cassava),296,9,Tapioca (Cassava),KERALA
+IDUKKI_Tomato,81,2,Tomato,KERALA
+IDUKKI_Vanilla,0,1,Vanilla,KERALA
+KANNUR_Acid Lime,0,1,Acid Lime,KERALA
+KANNUR_Amaranthus/Grain Amaranthus,301,6,Amaranthus/Grain Amaranthus,KERALA
+KANNUR_Arecanut,356,74,Arecanut,KERALA
+KANNUR_Ash Gourd (Petha),0,2,Ash Gourd (Petha),KERALA
+KANNUR_Avacado,32,2,Avacado,KERALA
+KANNUR_Banana,311,35,Banana,KERALA
+KANNUR_Betel Vine,0,1,Betel Vine,KERALA
+KANNUR_Bhindi(Okra/Ladysfinger),311,6,Bhindi(Okra/Ladysfinger),KERALA
+KANNUR_Bitter Gourd,307,10,Bitter Gourd,KERALA
+KANNUR_Bottle Gourd,303,2,Bottle Gourd,KERALA
+"KANNUR_Bovine(Cow,Buffalo)",0,2,"Bovine(Cow,Buffalo)",KERALA
+KANNUR_Brinjal,320,9,Brinjal,KERALA
+KANNUR_Cardamom,0,1,Cardamom,KERALA
+KANNUR_Cashew,237,8,Cashew,KERALA
+KANNUR_Chillies,338,14,Chillies,KERALA
+KANNUR_Clove,0,1,Clove,KERALA
+KANNUR_Cocoa,302,11,Cocoa,KERALA
+KANNUR_Coconut,357,101,Coconut,KERALA
+KANNUR_Coffee,0,1,Coffee,KERALA
+"KANNUR_Colocasia (Arvi, Arbi)",0,1,"Colocasia (Arvi, Arbi)",KERALA
+KANNUR_Cowpea (Vegetable),248,10,Cowpea (Vegetable),KERALA
+KANNUR_Cucumber,211,15,Cucumber,KERALA
+KANNUR_Curry Leaf,7,2,Curry Leaf,KERALA
+KANNUR_Dolichos Bean,0,1,Dolichos Bean,KERALA
+KANNUR_Fig,0,1,Fig,KERALA
+KANNUR_Ginger,264,6,Ginger,KERALA
+KANNUR_Goat,0,1,Goat,KERALA
+KANNUR_Grape,0,1,Grape,KERALA
+KANNUR_Guava,0,1,Guava,KERALA
+KANNUR_Guineafowl,0,1,Guineafowl,KERALA
+KANNUR_Hibiscus (Gurhal),0,2,Hibiscus (Gurhal),KERALA
+KANNUR_Ivy Gourd,203,5,Ivy Gourd,KERALA
+KANNUR_Jack Fruit,295,9,Jack Fruit,KERALA
+KANNUR_Lemon,284,3,Lemon,KERALA
+KANNUR_Mango,290,26,Mango,KERALA
+KANNUR_Marigold,0,3,Marigold,KERALA
+KANNUR_Mosambi,0,1,Mosambi,KERALA
+KANNUR_Nutmeg,161,7,Nutmeg,KERALA
+KANNUR_Oil palm,0,1,Oil palm,KERALA
+KANNUR_Paddy (Dhan),324,8,Paddy (Dhan),KERALA
+KANNUR_Papaya,168,11,Papaya,KERALA
+KANNUR_Passion Fruit,0,1,Passion Fruit,KERALA
+KANNUR_Pepper,318,73,Pepper,KERALA
+KANNUR_Pineapple,0,1,Pineapple,KERALA
+KANNUR_Ridge Gourd,0,1,Ridge Gourd,KERALA
+KANNUR_Rubber,212,15,Rubber,KERALA
+KANNUR_Sapota,97,2,Sapota,KERALA
+KANNUR_Tapioca (Cassava),201,10,Tapioca (Cassava),KERALA
+KANNUR_Teak,0,1,Teak,KERALA
+KANNUR_Tomato,335,6,Tomato,KERALA
+KANNUR_Turmeric,167,8,Turmeric,KERALA
+KASARGOD_Amaranthus/Grain Amaranthus,117,3,Amaranthus/Grain Amaranthus,KERALA
+KASARGOD_Amarphophallus (Surankand/Elephant Foot Yam),0,1,Amarphophallus (Surankand/Elephant Foot Yam),KERALA
+KASARGOD_Arecanut,337,52,Arecanut,KERALA
+KASARGOD_Banana,337,15,Banana,KERALA
+KASARGOD_Betel Vine,0,1,Betel Vine,KERALA
+KASARGOD_Bhindi(Okra/Ladysfinger),0,1,Bhindi(Okra/Ladysfinger),KERALA
+KASARGOD_Bitter Gourd,353,5,Bitter Gourd,KERALA
+KASARGOD_Bottle Gourd,0,2,Bottle Gourd,KERALA
+"KASARGOD_Bovine(Cow,Buffalo)",273,3,"Bovine(Cow,Buffalo)",KERALA
+KASARGOD_Brinjal,197,2,Brinjal,KERALA
+KASARGOD_Cashew,86,2,Cashew,KERALA
+KASARGOD_Cauliflower,0,1,Cauliflower,KERALA
+KASARGOD_Chillies,357,5,Chillies,KERALA
+KASARGOD_China Astor,0,1,China Astor,KERALA
+KASARGOD_Chrysanthemum,0,1,Chrysanthemum,KERALA
+KASARGOD_Cocoa,0,1,Cocoa,KERALA
+KASARGOD_Coconut,355,22,Coconut,KERALA
+KASARGOD_Coffee,0,1,Coffee,KERALA
+KASARGOD_Cowpea (Vegetable),95,5,Cowpea (Vegetable),KERALA
+KASARGOD_Cucumber,158,3,Cucumber,KERALA
+KASARGOD_Drum Stick,0,1,Drum Stick,KERALA
+KASARGOD_Fresh Water,25,2,Fresh Water,KERALA
+KASARGOD_Ginger,141,6,Ginger,KERALA
+KASARGOD_Goat,0,1,Goat,KERALA
+KASARGOD_Ivy Gourd,257,4,Ivy Gourd,KERALA
+KASARGOD_Jasmine,0,1,Jasmine,KERALA
+KASARGOD_Mango,129,4,Mango,KERALA
+KASARGOD_Marigold,212,2,Marigold,KERALA
+KASARGOD_Nutmeg,170,2,Nutmeg,KERALA
+KASARGOD_Oil palm,0,1,Oil palm,KERALA
+KASARGOD_Paddy (Dhan),142,10,Paddy (Dhan),KERALA
+KASARGOD_Pepper,229,5,Pepper,KERALA
+KASARGOD_Rubber,346,12,Rubber,KERALA
+KASARGOD_Sorghum (Jowar/Great Millet),0,1,Sorghum (Jowar/Great Millet),KERALA
+KASARGOD_Sweet Potato,0,1,Sweet Potato,KERALA
+KASARGOD_Tapioca (Cassava),0,1,Tapioca (Cassava),KERALA
+KASARGOD_Tomato,67,2,Tomato,KERALA
+KASARGOD_Watermelon,0,1,Watermelon,KERALA
+KOLLAM_Acid Lime,0,1,Acid Lime,KERALA
+KOLLAM_Amaranthus/Grain Amaranthus,87,2,Amaranthus/Grain Amaranthus,KERALA
+KOLLAM_Aonla,0,1,Aonla,KERALA
+KOLLAM_Arecanut,244,4,Arecanut,KERALA
+KOLLAM_Avacado,3,2,Avacado,KERALA
+KOLLAM_Banana,349,37,Banana,KERALA
+KOLLAM_Beekeeping,78,2,Beekeeping,KERALA
+KOLLAM_Bhindi(Okra/Ladysfinger),0,1,Bhindi(Okra/Ladysfinger),KERALA
+KOLLAM_Bitter Gourd,252,3,Bitter Gourd,KERALA
+KOLLAM_Bottle Gourd,0,1,Bottle Gourd,KERALA
+KOLLAM_Brinjal,0,1,Brinjal,KERALA
+KOLLAM_Cashew,66,2,Cashew,KERALA
+KOLLAM_Chillies,153,7,Chillies,KERALA
+KOLLAM_Coconut,353,52,Coconut,KERALA
+KOLLAM_Coffee,0,1,Coffee,KERALA
+KOLLAM_Cowpea (Vegetable),268,12,Cowpea (Vegetable),KERALA
+KOLLAM_Cucumber,249,4,Cucumber,KERALA
+KOLLAM_Dog,0,1,Dog,KERALA
+KOLLAM_Drum Stick,0,1,Drum Stick,KERALA
+KOLLAM_Ginger,232,3,Ginger,KERALA
+KOLLAM_Guava,339,3,Guava,KERALA
+KOLLAM_Ivy Gourd,303,2,Ivy Gourd,KERALA
+KOLLAM_Jack Fruit,333,11,Jack Fruit,KERALA
+KOLLAM_Kiwi Fruit,0,1,Kiwi Fruit,KERALA
+KOLLAM_Kokum,0,1,Kokum,KERALA
+KOLLAM_Litchi,0,1,Litchi,KERALA
+KOLLAM_Loquat,0,1,Loquat,KERALA
+KOLLAM_Mango,350,15,Mango,KERALA
+KOLLAM_Nutmeg,0,1,Nutmeg,KERALA
+KOLLAM_POULTRY  FARM,0,1,POULTRY  FARM,KERALA
+KOLLAM_Paddy (Dhan),0,1,Paddy (Dhan),KERALA
+KOLLAM_Passion Fruit,0,1,Passion Fruit,KERALA
+KOLLAM_Pea (Vegetable),0,1,Pea (Vegetable),KERALA
+KOLLAM_Pepper,150,4,Pepper,KERALA
+KOLLAM_Pineapple,0,1,Pineapple,KERALA
+KOLLAM_Rose,0,1,Rose,KERALA
+KOLLAM_Rubber,125,12,Rubber,KERALA
+KOLLAM_Sugarcane (Noble Cane),157,2,Sugarcane (Noble Cane),KERALA
+KOLLAM_Tapioca (Cassava),284,5,Tapioca (Cassava),KERALA
+KOLLAM_Tomato,258,3,Tomato,KERALA
+KOLLAM_Turmeric,329,3,Turmeric,KERALA
+KOTTAYAM_Amaranthus/Grain Amaranthus,0,1,Amaranthus/Grain Amaranthus,KERALA
+KOTTAYAM_Amarphophallus (Surankand/Elephant Foot Yam),297,3,Amarphophallus (Surankand/Elephant Foot Yam),KERALA
+KOTTAYAM_Anthurium,0,1,Anthurium,KERALA
+KOTTAYAM_Aonla,0,1,Aonla,KERALA
+KOTTAYAM_Apple,0,1,Apple,KERALA
+KOTTAYAM_Arecanut,222,11,Arecanut,KERALA
+KOTTAYAM_Ash Gourd (Petha),0,1,Ash Gourd (Petha),KERALA
+KOTTAYAM_Bail,0,1,Bail,KERALA
+KOTTAYAM_Banana,328,48,Banana,KERALA
+KOTTAYAM_Betel Vine,0,1,Betel Vine,KERALA
+KOTTAYAM_Bhindi(Okra/Ladysfinger),248,12,Bhindi(Okra/Ladysfinger),KERALA
+KOTTAYAM_Bitter Gourd,0,1,Bitter Gourd,KERALA
+KOTTAYAM_Brinjal,132,3,Brinjal,KERALA
+KOTTAYAM_Chillies,303,14,Chillies,KERALA
+KOTTAYAM_Cinnamon,0,1,Cinnamon,KERALA
+KOTTAYAM_Citrus,39,3,Citrus,KERALA
+KOTTAYAM_Cocoa,138,3,Cocoa,KERALA
+KOTTAYAM_Coconut,362,81,Coconut,KERALA
+KOTTAYAM_Coffee,0,1,Coffee,KERALA
+"KOTTAYAM_Colocasia (Arvi, Arbi)",225,3,"Colocasia (Arvi, Arbi)",KERALA
+KOTTAYAM_Cowpea (Vegetable),292,14,Cowpea (Vegetable),KERALA
+KOTTAYAM_Curry Leaf,41,2,Curry Leaf,KERALA
+KOTTAYAM_Custard Apple,3,2,Custard Apple,KERALA
+KOTTAYAM_Drum Stick,47,2,Drum Stick,KERALA
+KOTTAYAM_Ginger,145,6,Ginger,KERALA
+KOTTAYAM_Grape,0,2,Grape,KERALA
+KOTTAYAM_Guava,64,2,Guava,KERALA
+KOTTAYAM_Ivy Gourd,142,6,Ivy Gourd,KERALA
+KOTTAYAM_Jack Fruit,342,16,Jack Fruit,KERALA
+KOTTAYAM_Kokum,0,1,Kokum,KERALA
+KOTTAYAM_Lemon,0,1,Lemon,KERALA
+KOTTAYAM_Mango,270,28,Mango,KERALA
+KOTTAYAM_Nutmeg,339,37,Nutmeg,KERALA
+KOTTAYAM_Oats,0,1,Oats,KERALA
+KOTTAYAM_Onion,0,1,Onion,KERALA
+KOTTAYAM_Orange,162,3,Orange,KERALA
+KOTTAYAM_Other,0,1,Other,KERALA
+KOTTAYAM_Paddy (Dhan),343,13,Paddy (Dhan),KERALA
+KOTTAYAM_Papaya,282,10,Papaya,KERALA
+KOTTAYAM_Pea (Vegetable),0,1,Pea (Vegetable),KERALA
+KOTTAYAM_Pepper,344,20,Pepper,KERALA
+KOTTAYAM_Pineapple,0,1,Pineapple,KERALA
+KOTTAYAM_Pomegranate,25,3,Pomegranate,KERALA
+KOTTAYAM_Pumpkin,136,2,Pumpkin,KERALA
+KOTTAYAM_Rose,14,3,Rose,KERALA
+KOTTAYAM_Rubber,335,10,Rubber,KERALA
+KOTTAYAM_Sapota,259,2,Sapota,KERALA
+KOTTAYAM_Snake Gourd,2,2,Snake Gourd,KERALA
+KOTTAYAM_Sweet Potato,0,1,Sweet Potato,KERALA
+KOTTAYAM_Tapioca (Cassava),270,18,Tapioca (Cassava),KERALA
+KOTTAYAM_Teak,167,2,Teak,KERALA
+KOTTAYAM_Tomato,174,5,Tomato,KERALA
+KOTTAYAM_Turmeric,0,1,Turmeric,KERALA
+KOZHIKODE_Acid Lime,0,2,Acid Lime,KERALA
+KOZHIKODE_Aloe Vera,0,1,Aloe Vera,KERALA
+KOZHIKODE_Amaranthus/Grain Amaranthus,44,6,Amaranthus/Grain Amaranthus,KERALA
+KOZHIKODE_Amarphophallus (Surankand/Elephant Foot Yam),0,1,Amarphophallus (Surankand/Elephant Foot Yam),KERALA
+KOZHIKODE_Aonla,66,2,Aonla,KERALA
+KOZHIKODE_Arecanut,337,43,Arecanut,KERALA
+KOZHIKODE_Ash Gourd (Petha),73,7,Ash Gourd (Petha),KERALA
+KOZHIKODE_Avacado,0,1,Avacado,KERALA
+KOZHIKODE_Bail,0,1,Bail,KERALA
+KOZHIKODE_Banana,340,45,Banana,KERALA
+KOZHIKODE_Beekeeping,11,2,Beekeeping,KERALA
+KOZHIKODE_Ber,6,3,Ber,KERALA
+KOZHIKODE_Bhindi(Okra/Ladysfinger),351,7,Bhindi(Okra/Ladysfinger),KERALA
+KOZHIKODE_Bitter Gourd,53,3,Bitter Gourd,KERALA
+KOZHIKODE_Bottle Gourd,36,4,Bottle Gourd,KERALA
+"KOZHIKODE_Bovine(Cow,Buffalo)",0,1,"Bovine(Cow,Buffalo)",KERALA
+KOZHIKODE_Brinjal,299,7,Brinjal,KERALA
+KOZHIKODE_Chillies,299,18,Chillies,KERALA
+KOZHIKODE_Citrus,219,3,Citrus,KERALA
+KOZHIKODE_Cocoa,112,3,Cocoa,KERALA
+KOZHIKODE_Coconut,365,102,Coconut,KERALA
+"KOZHIKODE_Colocasia (Arvi, Arbi)",0,1,"Colocasia (Arvi, Arbi)",KERALA
+KOZHIKODE_Cowpea (Vegetable),307,21,Cowpea (Vegetable),KERALA
+KOZHIKODE_Cucumber,203,8,Cucumber,KERALA
+KOZHIKODE_Curry Leaf,219,5,Curry Leaf,KERALA
+KOZHIKODE_Custard Apple,11,2,Custard Apple,KERALA
+KOZHIKODE_DatePalm,0,1,DatePalm,KERALA
+KOZHIKODE_Drum Stick,65,4,Drum Stick,KERALA
+KOZHIKODE_Duck,140,3,Duck,KERALA
+KOZHIKODE_Ginger,150,6,Ginger,KERALA
+KOZHIKODE_Goat,0,1,Goat,KERALA
+KOZHIKODE_Grape,0,1,Grape,KERALA
+KOZHIKODE_Guava,271,6,Guava,KERALA
+KOZHIKODE_Hibiscus (Gurhal),0,1,Hibiscus (Gurhal),KERALA
+KOZHIKODE_Jack Fruit,221,9,Jack Fruit,KERALA
+KOZHIKODE_Jamun,0,1,Jamun,KERALA
+KOZHIKODE_Kokum,0,1,Kokum,KERALA
+KOZHIKODE_Lemon,0,1,Lemon,KERALA
+KOZHIKODE_Litchi,0,1,Litchi,KERALA
+KOZHIKODE_Mango,333,40,Mango,KERALA
+KOZHIKODE_Nutmeg,322,21,Nutmeg,KERALA
+KOZHIKODE_Other,0,1,Other,KERALA
+KOZHIKODE_Paddy (Dhan),0,1,Paddy (Dhan),KERALA
+KOZHIKODE_Papaya,328,17,Papaya,KERALA
+KOZHIKODE_Pea (Vegetable),0,1,Pea (Vegetable),KERALA
+KOZHIKODE_Pepper,285,40,Pepper,KERALA
+KOZHIKODE_Pineapple,78,3,Pineapple,KERALA
+KOZHIKODE_Pomegranate,0,1,Pomegranate,KERALA
+KOZHIKODE_Pumpkin,215,4,Pumpkin,KERALA
+KOZHIKODE_Ridge Gourd,0,1,Ridge Gourd,KERALA
+KOZHIKODE_Rubber,246,20,Rubber,KERALA
+KOZHIKODE_Sapota,195,5,Sapota,KERALA
+KOZHIKODE_Sunflower (suryamukhi),0,1,Sunflower (suryamukhi),KERALA
+KOZHIKODE_Sweet Potato,0,1,Sweet Potato,KERALA
+KOZHIKODE_Tapioca (Cassava),0,1,Tapioca (Cassava),KERALA
+KOZHIKODE_Teak,0,1,Teak,KERALA
+KOZHIKODE_Tomato,41,5,Tomato,KERALA
+KOZHIKODE_Turkey,8,3,Turkey,KERALA
+KOZHIKODE_Turmeric,168,8,Turmeric,KERALA
+MALAPPURAM_Amaranthus/Grain Amaranthus,66,3,Amaranthus/Grain Amaranthus,KERALA
+MALAPPURAM_Amarphophallus (Surankand/Elephant Foot Yam),0,1,Amarphophallus (Surankand/Elephant Foot Yam),KERALA
+MALAPPURAM_Arecanut,321,50,Arecanut,KERALA
+MALAPPURAM_Ash Gourd (Petha),227,2,Ash Gourd (Petha),KERALA
+MALAPPURAM_Avacado,0,1,Avacado,KERALA
+MALAPPURAM_Banana,286,55,Banana,KERALA
+MALAPPURAM_Bhindi(Okra/Ladysfinger),116,12,Bhindi(Okra/Ladysfinger),KERALA
+MALAPPURAM_Bitter Gourd,208,4,Bitter Gourd,KERALA
+"MALAPPURAM_Bovine(Cow,Buffalo)",0,1,"Bovine(Cow,Buffalo)",KERALA
+MALAPPURAM_Brinjal,248,11,Brinjal,KERALA
+MALAPPURAM_Chillies,312,12,Chillies,KERALA
+MALAPPURAM_Cinnamon,0,1,Cinnamon,KERALA
+MALAPPURAM_Clove,0,1,Clove,KERALA
+MALAPPURAM_Cocoa,155,4,Cocoa,KERALA
+MALAPPURAM_Coconut,361,92,Coconut,KERALA
+"MALAPPURAM_Colocasia (Arvi, Arbi)",0,1,"Colocasia (Arvi, Arbi)",KERALA
+MALAPPURAM_Cowpea (Vegetable),320,16,Cowpea (Vegetable),KERALA
+MALAPPURAM_Cucumber,169,5,Cucumber,KERALA
+MALAPPURAM_Curry Leaf,112,5,Curry Leaf,KERALA
+MALAPPURAM_Drum Stick,0,1,Drum Stick,KERALA
+MALAPPURAM_Ginger,266,8,Ginger,KERALA
+MALAPPURAM_Grape,0,1,Grape,KERALA
+MALAPPURAM_Guava,177,5,Guava,KERALA
+MALAPPURAM_Hibiscus (Gurhal),97,2,Hibiscus (Gurhal),KERALA
+MALAPPURAM_Indian Clover (Senji Sweet Clover),0,1,Indian Clover (Senji Sweet Clover),KERALA
+MALAPPURAM_Ivy Gourd,165,2,Ivy Gourd,KERALA
+MALAPPURAM_Jack Fruit,0,1,Jack Fruit,KERALA
+MALAPPURAM_Kokum,0,1,Kokum,KERALA
+MALAPPURAM_Loquat,0,1,Loquat,KERALA
+MALAPPURAM_Mango,364,39,Mango,KERALA
+MALAPPURAM_Nutmeg,268,8,Nutmeg,KERALA
+MALAPPURAM_Oats,0,1,Oats,KERALA
+MALAPPURAM_Orange,0,1,Orange,KERALA
+MALAPPURAM_POULTRY  FARM,0,1,POULTRY  FARM,KERALA
+MALAPPURAM_Paddy (Dhan),349,23,Paddy (Dhan),KERALA
+MALAPPURAM_Passion Fruit,0,1,Passion Fruit,KERALA
+MALAPPURAM_Pepper,289,16,Pepper,KERALA
+MALAPPURAM_Pigeon pea (red gram/arhar/tur),0,1,Pigeon pea (red gram/arhar/tur),KERALA
+MALAPPURAM_Pineapple,0,1,Pineapple,KERALA
+MALAPPURAM_Pumpkin,265,7,Pumpkin,KERALA
+MALAPPURAM_Rose,0,1,Rose,KERALA
+MALAPPURAM_Rubber,105,5,Rubber,KERALA
+MALAPPURAM_Tapioca (Cassava),203,7,Tapioca (Cassava),KERALA
+MALAPPURAM_Tomato,275,6,Tomato,KERALA
+MALAPPURAM_Turmeric,0,1,Turmeric,KERALA
+MALAPPURAM_Watermelon,88,3,Watermelon,KERALA
+PALAKKAD_Acid Lime,134,2,Acid Lime,KERALA
+PALAKKAD_Aloe Vera,0,1,Aloe Vera,KERALA
+PALAKKAD_Amaranthus/Grain Amaranthus,0,1,Amaranthus/Grain Amaranthus,KERALA
+PALAKKAD_Amarphophallus (Surankand/Elephant Foot Yam),0,2,Amarphophallus (Surankand/Elephant Foot Yam),KERALA
+PALAKKAD_Arecanut,345,30,Arecanut,KERALA
+PALAKKAD_Ash Gourd (Petha),145,3,Ash Gourd (Petha),KERALA
+PALAKKAD_BAJRA NAPIER HYBRID,0,1,BAJRA NAPIER HYBRID,KERALA
+PALAKKAD_Babool,0,1,Babool,KERALA
+PALAKKAD_Banana,335,17,Banana,KERALA
+PALAKKAD_Bhindi(Okra/Ladysfinger),256,9,Bhindi(Okra/Ladysfinger),KERALA
+PALAKKAD_Bitter Gourd,320,3,Bitter Gourd,KERALA
+PALAKKAD_Black Gram (urd bean),291,3,Black Gram (urd bean),KERALA
+PALAKKAD_Bottle Gourd,0,1,Bottle Gourd,KERALA
+PALAKKAD_Brinjal,319,9,Brinjal,KERALA
+PALAKKAD_Broad Bean,0,1,Broad Bean,KERALA
+PALAKKAD_Cabbage,0,1,Cabbage,KERALA
+PALAKKAD_Cardamom,257,3,Cardamom,KERALA
+PALAKKAD_Cauliflower,11,2,Cauliflower,KERALA
+PALAKKAD_Chillies,287,8,Chillies,KERALA
+PALAKKAD_China Astor,0,1,China Astor,KERALA
+PALAKKAD_Citrus,0,1,Citrus,KERALA
+PALAKKAD_Cocoa,0,1,Cocoa,KERALA
+PALAKKAD_Coconut,324,24,Coconut,KERALA
+"PALAKKAD_Colocasia (Arvi, Arbi)",0,1,"Colocasia (Arvi, Arbi)",KERALA
+PALAKKAD_Cowpea (Vegetable),264,5,Cowpea (Vegetable),KERALA
+PALAKKAD_Cucumber,0,1,Cucumber,KERALA
+PALAKKAD_Fig,0,1,Fig,KERALA
+PALAKKAD_FingerMillet  (Ragi/Mandika),0,1,FingerMillet  (Ragi/Mandika),KERALA
+PALAKKAD_Fresh Water,10,2,Fresh Water,KERALA
+PALAKKAD_Ginger,0,2,Ginger,KERALA
+PALAKKAD_Grape,72,2,Grape,KERALA
+PALAKKAD_Green Gram (Moong Bean/ Moong),0,1,Green Gram (Moong Bean/ Moong),KERALA
+PALAKKAD_Horse Gram (kulthi/kultha),0,1,Horse Gram (kulthi/kultha),KERALA
+PALAKKAD_Jack Fruit,250,5,Jack Fruit,KERALA
+PALAKKAD_Mango,343,28,Mango,KERALA
+PALAKKAD_Marigold,0,1,Marigold,KERALA
+PALAKKAD_Mustard,0,1,Mustard,KERALA
+PALAKKAD_Nutmeg,202,4,Nutmeg,KERALA
+PALAKKAD_POULTRY  FARM,0,1,POULTRY  FARM,KERALA
+PALAKKAD_Paddy (Dhan),360,61,Paddy (Dhan),KERALA
+PALAKKAD_Papaya,205,3,Papaya,KERALA
+PALAKKAD_Passion Fruit,0,1,Passion Fruit,KERALA
+PALAKKAD_Pepper,353,14,Pepper,KERALA
+PALAKKAD_Pomegranate,0,1,Pomegranate,KERALA
+PALAKKAD_Pumpkin,214,6,Pumpkin,KERALA
+PALAKKAD_Rose,187,3,Rose,KERALA
+PALAKKAD_Rubber,1,2,Rubber,KERALA
+PALAKKAD_Sandal Wood,0,1,Sandal Wood,KERALA
+PALAKKAD_Sesame (Gingelly/Til)/Sesamum,286,3,Sesame (Gingelly/Til)/Sesamum,KERALA
+PALAKKAD_Snake Gourd,0,1,Snake Gourd,KERALA
+PALAKKAD_Sweet Potato,0,1,Sweet Potato,KERALA
+PALAKKAD_Tapioca (Cassava),250,10,Tapioca (Cassava),KERALA
+PALAKKAD_Tomato,326,12,Tomato,KERALA
+PALAKKAD_Turkey,0,1,Turkey,KERALA
+PALAKKAD_Turmeric,11,2,Turmeric,KERALA
+PATHANAMTHITTA_Acid Lime,0,1,Acid Lime,KERALA
+PATHANAMTHITTA_Amaranthus/Grain Amaranthus,345,6,Amaranthus/Grain Amaranthus,KERALA
+PATHANAMTHITTA_Amarphophallus (Surankand/Elephant Foot Yam),16,2,Amarphophallus (Surankand/Elephant Foot Yam),KERALA
+PATHANAMTHITTA_Aonla,0,1,Aonla,KERALA
+PATHANAMTHITTA_Arecanut,0,1,Arecanut,KERALA
+PATHANAMTHITTA_Banana,347,34,Banana,KERALA
+PATHANAMTHITTA_Bhindi(Okra/Ladysfinger),44,2,Bhindi(Okra/Ladysfinger),KERALA
+PATHANAMTHITTA_Bitter Gourd,109,2,Bitter Gourd,KERALA
+PATHANAMTHITTA_Bottle Gourd,0,1,Bottle Gourd,KERALA
+"PATHANAMTHITTA_Bovine(Cow,Buffalo)",0,1,"Bovine(Cow,Buffalo)",KERALA
+PATHANAMTHITTA_Brinjal,44,2,Brinjal,KERALA
+PATHANAMTHITTA_Chillies,210,5,Chillies,KERALA
+PATHANAMTHITTA_Coconut,336,24,Coconut,KERALA
+PATHANAMTHITTA_Cowpea (Vegetable),268,7,Cowpea (Vegetable),KERALA
+PATHANAMTHITTA_Cucumber,0,1,Cucumber,KERALA
+PATHANAMTHITTA_Curry Leaf,0,1,Curry Leaf,KERALA
+PATHANAMTHITTA_Drum Stick,0,1,Drum Stick,KERALA
+PATHANAMTHITTA_Ginger,188,8,Ginger,KERALA
+PATHANAMTHITTA_Goat,0,1,Goat,KERALA
+PATHANAMTHITTA_Jack Fruit,291,6,Jack Fruit,KERALA
+PATHANAMTHITTA_Jasmine,0,1,Jasmine,KERALA
+PATHANAMTHITTA_Lesser Yam (Rafula),0,1,Lesser Yam (Rafula),KERALA
+PATHANAMTHITTA_Mango,320,6,Mango,KERALA
+PATHANAMTHITTA_Marigold,0,2,Marigold,KERALA
+PATHANAMTHITTA_Nutmeg,41,4,Nutmeg,KERALA
+PATHANAMTHITTA_POULTRY  FARM,0,2,POULTRY  FARM,KERALA
+PATHANAMTHITTA_Paddy (Dhan),0,2,Paddy (Dhan),KERALA
+PATHANAMTHITTA_Pepper,52,4,Pepper,KERALA
+PATHANAMTHITTA_Poplar,0,1,Poplar,KERALA
+PATHANAMTHITTA_Pumpkin,0,1,Pumpkin,KERALA
+PATHANAMTHITTA_Rose,0,1,Rose,KERALA
+PATHANAMTHITTA_Rubber,184,5,Rubber,KERALA
+PATHANAMTHITTA_Sandal Wood,0,1,Sandal Wood,KERALA
+PATHANAMTHITTA_Sapota,0,1,Sapota,KERALA
+PATHANAMTHITTA_Snake Gourd,0,1,Snake Gourd,KERALA
+PATHANAMTHITTA_Tapioca (Cassava),134,5,Tapioca (Cassava),KERALA
+PATHANAMTHITTA_Tomato,0,1,Tomato,KERALA
+PATHANAMTHITTA_Turkey,0,1,Turkey,KERALA
+PATHANAMTHITTA_Turmeric,0,1,Turmeric,KERALA
+THRISSUR_Acid Lime,267,6,Acid Lime,KERALA
+THRISSUR_Amaranthus/Grain Amaranthus,274,7,Amaranthus/Grain Amaranthus,KERALA
+THRISSUR_Amarphophallus (Surankand/Elephant Foot Yam),193,2,Amarphophallus (Surankand/Elephant Foot Yam),KERALA
+THRISSUR_Anthurium,173,2,Anthurium,KERALA
+THRISSUR_Aonla,19,2,Aonla,KERALA
+THRISSUR_Arecanut,330,28,Arecanut,KERALA
+THRISSUR_Ash Gourd (Petha),316,6,Ash Gourd (Petha),KERALA
+THRISSUR_Avacado,0,1,Avacado,KERALA
+THRISSUR_Banana,353,67,Banana,KERALA
+THRISSUR_Ber,0,1,Ber,KERALA
+THRISSUR_Bhindi(Okra/Ladysfinger),171,8,Bhindi(Okra/Ladysfinger),KERALA
+THRISSUR_Bitter Gourd,54,4,Bitter Gourd,KERALA
+THRISSUR_Bottle Gourd,0,1,Bottle Gourd,KERALA
+"THRISSUR_Bovine(Cow,Buffalo)",282,2,"Bovine(Cow,Buffalo)",KERALA
+THRISSUR_Brackish,0,1,Brackish,KERALA
+THRISSUR_Brinjal,316,9,Brinjal,KERALA
+THRISSUR_Broad Bean,0,1,Broad Bean,KERALA
+THRISSUR_Cat,0,1,Cat,KERALA
+THRISSUR_Cauliflower,0,2,Cauliflower,KERALA
+THRISSUR_Chillies,349,23,Chillies,KERALA
+THRISSUR_Citrus,108,5,Citrus,KERALA
+THRISSUR_Clove,0,1,Clove,KERALA
+THRISSUR_Cluster Bean,289,7,Cluster Bean,KERALA
+THRISSUR_Cocoa,0,1,Cocoa,KERALA
+THRISSUR_Coconut,358,78,Coconut,KERALA
+THRISSUR_Coffee,0,1,Coffee,KERALA
+"THRISSUR_Colocasia (Arvi, Arbi)",37,3,"Colocasia (Arvi, Arbi)",KERALA
+THRISSUR_Cowpea (Vegetable),309,22,Cowpea (Vegetable),KERALA
+THRISSUR_Cucumber,317,7,Cucumber,KERALA
+THRISSUR_Curry Leaf,28,3,Curry Leaf,KERALA
+THRISSUR_Cymbidium,0,1,Cymbidium,KERALA
+THRISSUR_DatePalm,0,1,DatePalm,KERALA
+THRISSUR_Dog,0,1,Dog,KERALA
+THRISSUR_Drum Stick,251,4,Drum Stick,KERALA
+THRISSUR_Fresh Water,141,2,Fresh Water,KERALA
+THRISSUR_Ginger,193,8,Ginger,KERALA
+THRISSUR_Goat,193,2,Goat,KERALA
+THRISSUR_Grape,0,1,Grape,KERALA
+THRISSUR_Guava,0,1,Guava,KERALA
+THRISSUR_Hibiscus (Gurhal),4,2,Hibiscus (Gurhal),KERALA
+THRISSUR_Honey plant,0,1,Honey plant,KERALA
+THRISSUR_Ivy Gourd,317,5,Ivy Gourd,KERALA
+THRISSUR_Jack Fruit,327,11,Jack Fruit,KERALA
+THRISSUR_Jasmine,312,42,Jasmine,KERALA
+THRISSUR_Kokum,0,2,Kokum,KERALA
+THRISSUR_Lemon,57,3,Lemon,KERALA
+THRISSUR_Lilliums,0,1,Lilliums,KERALA
+THRISSUR_Litchi,53,3,Litchi,KERALA
+THRISSUR_Mango,359,25,Mango,KERALA
+THRISSUR_Marigold,142,2,Marigold,KERALA
+THRISSUR_Methi (Fenugreek),0,1,Methi (Fenugreek),KERALA
+THRISSUR_Neem,0,1,Neem,KERALA
+THRISSUR_Nutmeg,353,48,Nutmeg,KERALA
+THRISSUR_POULTRY  FARM,237,2,POULTRY  FARM,KERALA
+THRISSUR_Paddy (Dhan),352,26,Paddy (Dhan),KERALA
+THRISSUR_Papaya,326,5,Papaya,KERALA
+THRISSUR_Pear,61,2,Pear,KERALA
+THRISSUR_Pepper,317,17,Pepper,KERALA
+THRISSUR_Pineapple,0,1,Pineapple,KERALA
+THRISSUR_Potato,0,2,Potato,KERALA
+THRISSUR_Pumpkin,285,4,Pumpkin,KERALA
+THRISSUR_Strawberry,0,1,Strawberry,KERALA
+THRISSUR_Tapioca (Cassava),329,5,Tapioca (Cassava),KERALA
+THRISSUR_Tea,0,1,Tea,KERALA
+THRISSUR_Tomato,291,6,Tomato,KERALA
+THRISSUR_Tulsi,0,1,Tulsi,KERALA
+THRISSUR_Turkey,0,1,Turkey,KERALA
+THRISSUR_Turmeric,110,3,Turmeric,KERALA
+THRISSUR_Watermelon,63,8,Watermelon,KERALA
+TRIVANDRUM_Acid Lime,0,1,Acid Lime,KERALA
+TRIVANDRUM_Amaranthus/Grain Amaranthus,192,14,Amaranthus/Grain Amaranthus,KERALA
+TRIVANDRUM_Aonla,0,1,Aonla,KERALA
+TRIVANDRUM_Apricot,0,1,Apricot,KERALA
+TRIVANDRUM_Arecanut,190,6,Arecanut,KERALA
+TRIVANDRUM_Bail,0,1,Bail,KERALA
+TRIVANDRUM_Banana,341,55,Banana,KERALA
+TRIVANDRUM_Beekeeping,0,1,Beekeeping,KERALA
+TRIVANDRUM_Bhindi(Okra/Ladysfinger),297,20,Bhindi(Okra/Ladysfinger),KERALA
+TRIVANDRUM_Bitter Gourd,150,4,Bitter Gourd,KERALA
+TRIVANDRUM_Bottle Gourd,0,1,Bottle Gourd,KERALA
+"TRIVANDRUM_Bovine(Cow,Buffalo)",0,1,"Bovine(Cow,Buffalo)",KERALA
+TRIVANDRUM_Brinjal,230,22,Brinjal,KERALA
+TRIVANDRUM_Broad Bean,0,1,Broad Bean,KERALA
+TRIVANDRUM_Chillies,328,18,Chillies,KERALA
+TRIVANDRUM_Chrysanthemum,0,1,Chrysanthemum,KERALA
+TRIVANDRUM_Citrus,0,1,Citrus,KERALA
+TRIVANDRUM_Clove,0,1,Clove,KERALA
+TRIVANDRUM_Cocoa,0,2,Cocoa,KERALA
+TRIVANDRUM_Coconut,362,93,Coconut,KERALA
+"TRIVANDRUM_Colocasia (Arvi, Arbi)",0,2,"Colocasia (Arvi, Arbi)",KERALA
+TRIVANDRUM_Cowpea (Vegetable),249,36,Cowpea (Vegetable),KERALA
+TRIVANDRUM_Cucumber,186,6,Cucumber,KERALA
+TRIVANDRUM_Curry Leaf,0,1,Curry Leaf,KERALA
+TRIVANDRUM_Custard Apple,88,3,Custard Apple,KERALA
+TRIVANDRUM_Dog,0,1,Dog,KERALA
+TRIVANDRUM_Drum Stick,0,1,Drum Stick,KERALA
+TRIVANDRUM_Fig,0,1,Fig,KERALA
+TRIVANDRUM_Fresh Water,95,2,Fresh Water,KERALA
+TRIVANDRUM_Ginger,255,8,Ginger,KERALA
+TRIVANDRUM_Grape,46,3,Grape,KERALA
+TRIVANDRUM_Guava,221,3,Guava,KERALA
+TRIVANDRUM_Hazlenut,48,2,Hazlenut,KERALA
+TRIVANDRUM_Jack Fruit,306,15,Jack Fruit,KERALA
+TRIVANDRUM_Jasmine,114,2,Jasmine,KERALA
+TRIVANDRUM_Lemon,0,1,Lemon,KERALA
+TRIVANDRUM_Litchi,0,1,Litchi,KERALA
+TRIVANDRUM_Mango,306,31,Mango,KERALA
+TRIVANDRUM_Marigold,0,1,Marigold,KERALA
+TRIVANDRUM_Mint,0,1,Mint,KERALA
+TRIVANDRUM_Nutmeg,124,2,Nutmeg,KERALA
+TRIVANDRUM_Other,0,1,Other,KERALA
+TRIVANDRUM_Paddy (Dhan),72,5,Paddy (Dhan),KERALA
+TRIVANDRUM_Papaya,327,7,Papaya,KERALA
+TRIVANDRUM_Passion Fruit,0,1,Passion Fruit,KERALA
+TRIVANDRUM_Pear,0,1,Pear,KERALA
+TRIVANDRUM_Pepper,155,7,Pepper,KERALA
+TRIVANDRUM_Pineapple,1,2,Pineapple,KERALA
+TRIVANDRUM_Rose,108,3,Rose,KERALA
+TRIVANDRUM_Rubber,278,15,Rubber,KERALA
+TRIVANDRUM_Sapota,0,1,Sapota,KERALA
+TRIVANDRUM_Sesame (Gingelly/Til)/Sesamum,0,3,Sesame (Gingelly/Til)/Sesamum,KERALA
+TRIVANDRUM_Snake Gourd,0,2,Snake Gourd,KERALA
+TRIVANDRUM_Sweet Potato,3,2,Sweet Potato,KERALA
+TRIVANDRUM_Tapioca (Cassava),254,9,Tapioca (Cassava),KERALA
+TRIVANDRUM_Teak,165,2,Teak,KERALA
+TRIVANDRUM_Tomato,89,10,Tomato,KERALA
+TRIVANDRUM_Turmeric,9,2,Turmeric,KERALA
+TRIVANDRUM_Watermelon,40,2,Watermelon,KERALA
+WAYANAD_Arecanut,140,2,Arecanut,KERALA
+WAYANAD_Avacado,0,1,Avacado,KERALA
+WAYANAD_Banana,324,22,Banana,KERALA
+WAYANAD_Bitter Gourd,0,2,Bitter Gourd,KERALA
+"WAYANAD_Bovine(Cow,Buffalo)",0,1,"Bovine(Cow,Buffalo)",KERALA
+WAYANAD_Cardamom,0,1,Cardamom,KERALA
+WAYANAD_Chillies,308,4,Chillies,KERALA
+WAYANAD_Cinnamon,0,1,Cinnamon,KERALA
+WAYANAD_Cocoa,0,1,Cocoa,KERALA
+WAYANAD_Coconut,242,8,Coconut,KERALA
+WAYANAD_Coffee,257,16,Coffee,KERALA
+WAYANAD_Cowpea (Vegetable),0,1,Cowpea (Vegetable),KERALA
+WAYANAD_Garlic,0,2,Garlic,KERALA
+WAYANAD_Ginger,170,10,Ginger,KERALA
+WAYANAD_Mango,191,2,Mango,KERALA
+WAYANAD_Nutmeg,0,1,Nutmeg,KERALA
+WAYANAD_Onion,0,1,Onion,KERALA
+WAYANAD_POULTRY  FARM,0,2,POULTRY  FARM,KERALA
+WAYANAD_Paddy (Dhan),50,2,Paddy (Dhan),KERALA
+WAYANAD_Papaya,0,1,Papaya,KERALA
+WAYANAD_Passion Fruit,47,2,Passion Fruit,KERALA
+WAYANAD_Pepper,214,8,Pepper,KERALA
+WAYANAD_Potato,0,1,Potato,KERALA
+WAYANAD_Sweet Potato,0,1,Sweet Potato,KERALA
+WAYANAD_Tomato,0,1,Tomato,KERALA
