@@ -4,6 +4,7 @@ event_log.py, evaluate_pipelines.py and semantic_mismatch.py, and ties them
 into a findings summary + KPI tiles + process map + loop-rate chart + an
 interactive per-case event explorer + a live query demo.
 
+Run: python dashboard/app.py   (then open http://127.0.0.1:8050)
 """
 import os
 import sys
@@ -918,34 +919,54 @@ def _prediction_card(label, value, confidence=None):
     return html.Div(fig_children, style={**CARD_STYLE, "padding": "14px 16px", "flex": "1", "minWidth": "180px"})
 
 
+def _svm_confidence(scores, classes, predicted_label):
+    """Turn a LinearSVC decision_function output into a relative-confidence
+    readout for the predicted class -- NOT a calibrated probability, so it's
+    labeled "model confidence" rather than a percentage-likelihood claim.
+    Handles both shapes decision_function can return: one score per class
+    (3+ classes, softmax-normalized) and a single scalar (exactly 2 classes,
+    sigmoid-normalized, since sklearn only stores one margin for the binary
+    case rather than one per class).
+    """
+    scores = np.atleast_1d(scores)
+    if len(classes) == 2 and scores.shape[-1] != len(classes):
+        # binary case: one scalar margin, positive score favors classes_[1]
+        margin = float(scores[0]) if scores.ndim else float(scores)
+        prob_positive = 1 / (1 + np.exp(-margin))
+        prob = prob_positive if predicted_label == classes[1] else (1 - prob_positive)
+        return float(prob)
+    exp_scores = np.exp(scores - np.max(scores))
+    probs = exp_scores / exp_scores.sum()
+    class_index = {c: i for i, c in enumerate(classes)}
+    return float(probs[class_index[predicted_label]])
+
+
 def _predict_with_confidence(clf, text):
     """Same hierarchical prediction as HierarchicalClassifier.predict(), plus a
-    relative-confidence readout for the category stage using the linear SVM's
-    decision margin (softmax-normalized) -- NOT a calibrated probability, so
-    it's labeled "model confidence" rather than a percentage-likelihood claim.
-    Query-type confidence is skipped: several per-category sub-classifiers are
-    binary (decision_function returns a single scalar, not one score per
-    class, in that case) or a plain majority-class fallback with no model at
-    all, and handling every one of those shapes correctly isn't worth the risk
-    this close to a deadline for a secondary readout.
+    relative-confidence readout at both the category and query-type stage.
+    Query-type confidence is only available when the category actually has a
+    trained sub-classifier: some categories have too few labelled examples and
+    fall back to a stored majority-class string with no model at all, and
+    there's no honest confidence number to show for a plain majority-class
+    guess, so that case returns confidence=None rather than a fabricated value.
     """
     Xc = clf.category_vectorizer.transform([text])
     cat_scores = clf.category_clf.decision_function(Xc)[0]
     cat_classes = clf.category_clf.classes_
-    exp_scores = np.exp(cat_scores - np.max(cat_scores))
-    cat_probs = exp_scores / exp_scores.sum()
-    best_i = int(np.argmax(cat_probs))
-    pred_cat = cat_classes[best_i]
-    cat_confidence = float(cat_probs[best_i])
+    pred_cat = clf.category_clf.predict(Xc)[0]
+    cat_confidence = _svm_confidence(cat_scores, cat_classes, pred_cat)
 
     vec = clf.querytype_vectorizers.get(pred_cat)
     sub_clf = clf.querytype_clfs.get(pred_cat)
     if vec is None:
         pred_qtype = sub_clf if isinstance(sub_clf, str) else "UNKNOWN"
+        qtype_confidence = None
     else:
         Xq = vec.transform([text])
         pred_qtype = sub_clf.predict(Xq)[0]
-    return pred_cat, cat_confidence, pred_qtype
+        qtype_scores = sub_clf.decision_function(Xq)[0]
+        qtype_confidence = _svm_confidence(qtype_scores, sub_clf.classes_, pred_qtype)
+    return pred_cat, cat_confidence, pred_qtype, qtype_confidence
 
 
 @app.callback(
@@ -960,10 +981,10 @@ def live_query_demo(text):
     if classifier is None:
         return "Baseline classifier not found — run src/baseline_classifier.py first.", [], []
 
-    pred_cat, cat_confidence, pred_qtype = _predict_with_confidence(classifier, text)
+    pred_cat, cat_confidence, pred_qtype, qtype_confidence = _predict_with_confidence(classifier, text)
     result = html.Div([
         _prediction_card("Predicted category", pred_cat, confidence=cat_confidence),
-        _prediction_card("Predicted query type", pred_qtype),
+        _prediction_card("Predicted query type", pred_qtype, confidence=qtype_confidence),
     ], style={"display": "flex", "gap": "12px", "flexWrap": "wrap"})
 
     similar = retriever.query(text, k=5)
