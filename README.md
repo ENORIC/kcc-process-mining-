@@ -109,29 +109,14 @@ python src/llm_extraction.py --consistency-check --model qwen2.5:7b-instruct
 python src/evaluate_pipelines.py
 ```
 Compares the baseline classifier and the LLM extraction against
-`data/gold/gold_set_final.csv` (n=300). **Result: the baseline classifier wins decisively**
-— 75.7% QueryType accuracy (macro-F1 0.389) vs. 58.3% for the LLM (macro-F1 0.098). The
-LLM's very low macro-F1 shows it collapses most of the 42 query types into a handful of
-common categories rather than genuinely discriminating between them; its one real strength
-is the coarser resolution-signal judgment (80.0% accuracy — not something the baseline
-classifier is set up to predict at all, since no resolution-signal label exists in the raw
-data). The baseline classifier's `Category` output is what feeds the event log in step 2.
-
+`data/gold/gold_set_final.csv` (n=300).
 ## RQ2 — Process Mining
 
 ```bash
 python src/event_log.py --input data/processed/kcc_clean.csv --activity-col Category
 python src/case_window_sensitivity.py
 ```
-Look at `outputs/summary_by_crop.csv` for loop rate and case duration by crop. **Result:**
-726 cases (district+crop, full year), mean loop rate 0.290. A robustness check re-ran the
-same calculation under a stricter district+crop+month window (2,411 cases, mean loop rate
-0.174 — not directly comparable in magnitude, since a one-month window mechanically gives a
-repeat call less time to occur at all) and compared *rank order* instead: Coconut ranks #1
-under both window definitions, Banana stays in the top three under both, and the Spearman
-rank correlation between the two rankings across all comparably-sized crops is 0.69. The
-headline crop-level finding is robust to how a case is defined, not an artefact of the
-year-long window choice.
+Look at `outputs/summary_by_crop.csv` for loop rate and case duration by crop.
 
 ## RQ3 — Semantic Mismatch
 
@@ -140,15 +125,7 @@ python src/semantic_mismatch.py --backend nli --input data/processed/kcc_clean.c
 ```
 Cross-reference `outputs/semantic_mismatch.csv`'s flagged rate against the RQ2 loop rate —
 do crops/categories with high semantic-mismatch rates also show high loop rates, or are
-they catching different problems? **Result:** the lexical fallback flags 94.8% of records
-as mismatches; the real NLI backend flags 98.0% — *higher*, not lower. Manual inspection of
-the NLI backend's most confident "mismatch" calls found two correct, clearly on-topic
-agronomic answers scored at 99.9%+ mismatch confidence. This is a genuine methodological
-finding, not a bug: generic NLI models are trained on everyday declarative sentence pairs,
-not on judging whether a technical instruction satisfies an abstract task-completion
-criterion, so the entailment framing doesn't transfer well to this domain-specific
-adequacy judgment zero-shot. A reliable automated version of this check would need a model
-fine-tuned specifically for answer-adequacy judgment.
+they catching different problems? 
 
 ## Interactive Process Explorer & Live Classifier Demo
 
