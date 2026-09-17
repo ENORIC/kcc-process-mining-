@@ -128,7 +128,6 @@ src/
   event_log.py              # RQ2: PM4Py event log + Inductive Miner + metrics
   case_window_sensitivity.py # RQ2: robustness check under a stricter case window
   semantic_mismatch.py      # RQ3: NLI-based query-answer mismatch detection
-  ocpm_experiment.py        # side-experiment: object-centric process mining, see report
 dashboard/
   app.py                    # Layer 3: interactive Dash dashboard
 data/                        # raw, processed, gold (gitignored)
