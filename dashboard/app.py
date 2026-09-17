@@ -152,7 +152,7 @@ app.layout = html.Div(style={
                 "padding": "4px 10px", "borderRadius": "999px", "letterSpacing": "0.5px", "marginLeft": "12px"}),
         ], style={"display": "flex", "alignItems": "center"}),
         html.Div("Semantic-aware LLM process mining over India's Kisan Call Centre helpline. "
-                 "This is a single-state deep dive, not a national survey — scoped to Kerala "
+                 "This is a single-state deep dive, not a national survey it is only scoped to Kerala "
                  "on purpose, using real 2024 data, so every number here is grounded in an "
                  "actual verified call rather than a thin slice of five states at once. "
                  "Shows where advisory calls loop, and where AI-generated answers actually "
@@ -171,7 +171,7 @@ app.layout = html.Div(style={
                      "a stand-in for \"one farmer's journey\" since the raw data has no farmer ID "
                      "(a disclosed limitation, not an oversight)."]),
             html.Li([html.B("Loop rate: "), "the share of a case's calls that repeat a category "
-                     "already seen earlier in that same case — a proxy for \"this problem kept "
+                     "already seen earlier in that same case, a proxy for \"this problem kept "
                      "coming back.\""]),
             html.Li([html.B("Duration: "), "days between a case's first and last call."]),
             html.Li([html.B("Variant: "), "the exact sequence of categories a case followed. Two "
@@ -186,14 +186,14 @@ app.layout = html.Div(style={
         html.Ul([
             html.Li([html.B(f"{n_cases_total} advisory cases"),
                      f" traced across Kerala districts and crops, with a mean repeat-call "
-                     f"('loop') rate of {loop_df['loop_rate'].mean():.0%} — farmers frequently "
+                     f"('loop') rate of {loop_df['loop_rate'].mean():.0%} farmers frequently "
                      f"call back about the same category of problem."]),
             html.Li([html.B(f"{top_loop_text}"), " show the highest loop rates among crops with "
                      "meaningful call volume, flagging where advisory quality likely needs the "
                      "most attention."]),
             rq1_finding,
             html.Li([html.B(f"{overall_mismatch_pct:.1f}% of answers flagged"),
-                     " as a lexical query-answer mismatch — evidence that surface word-overlap can't "
+                     " as a lexical query-answer mismatch evidence that surface word-overlap can't "
                      "reliably judge answer quality, motivating the semantic (NLI) approach."])
             if overall_mismatch_pct is not None else None,
         ], style={"lineHeight": "1.9", "color": COLORS["text"], "marginBottom": 0}),
