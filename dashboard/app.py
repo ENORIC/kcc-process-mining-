@@ -740,13 +740,14 @@ def update_process_map(which, crops):
         subset = raw_df[raw_df["Crop"].isin(crops)]
 
     n_calls = len(subset)
-    # "case(s)" here must mean the same thing the "Cases" KPI and Key Findings
-    # use everywhere else on this page: a case with 2+ calls, i.e. one that
-    # actually appears in loop_df. Counting every district+crop combination
-    # in the raw data instead (including single-call cases with no possible
-    # loop) used to give a different, larger number on this card than on the
-    # KPI tile for the exact same filter -- confusing, not just cosmetic.
-    n_cases = subset[subset["case_id"].isin(loop_df["case_id"])]["case_id"].nunique()
+    # This "case(s)" count is deliberately NOT the same population as the
+    # "Cases" KPI / Key Findings above (711): those exclude the 15
+    # "<District>_Others" cases, since "Others" isn't a real crop and
+    # shouldn't count toward a crop-level loop-rate metric. But every one of
+    # those 15 cases' calls still has a real QueryType and genuinely feeds
+    # this diagram, so the count here must include them too -- otherwise
+    # n_calls (6570) and n_cases stop describing the same population.
+    n_cases = subset["case_id"].nunique()
 
     if n_calls < 2:
         note = (f"Only {n_calls} call{'s' if n_calls != 1 else ''} for this selection — there's no "
