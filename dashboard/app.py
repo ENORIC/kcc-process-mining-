@@ -4,7 +4,6 @@ event_log.py, evaluate_pipelines.py and semantic_mismatch.py, and ties them
 into a findings summary + KPI tiles + process map + loop-rate chart + an
 interactive per-case event explorer + a live query demo.
 
-Run: python dashboard/app.py   (then open http://127.0.0.1:8050)
 """
 import os
 import sys
