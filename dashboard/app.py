@@ -192,8 +192,8 @@ app.layout = html.Div(style={
                      "most attention."]),
             rq1_finding,
             html.Li([html.B(f"{overall_mismatch_pct:.1f}% of answers flagged"),
-                     " as a lexical query-answer mismatch — evidence that surface word-overlap can't "
-                     "reliably judge answer quality, motivating the semantic (NLI) approach."])
+                     " as a query-answer mismatch by the semantic-entailment (NLI) model — evidence that "
+                     "even topically-correct answers can fail to directly address what was asked."])
             if overall_mismatch_pct is not None else None,
         ], style={"lineHeight": "1.9", "color": COLORS["text"], "marginBottom": 0}),
     ]),
