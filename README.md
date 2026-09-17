@@ -2,7 +2,7 @@ This is the Final Module Project for **B198c7 – AI Applications for Digital Bu
 
 ## Semantic-Aware LLM Process Mining Advisory Workflow
 - Detecting Repeat-Issue Loops and Answer-Quality Gaps in India's Kisan Call Centre (Kerala, 2024)
-- By — Enosh Paul Niju GH1206595
+- By — Enosh Paul Niju GH1026595
 
 The core question driving this project: **can a text-classification layer, a process-mining
 layer, and a semantic-matching layer, stacked together, reveal breakdowns in an advisory
