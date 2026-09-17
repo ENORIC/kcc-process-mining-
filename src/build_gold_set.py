@@ -17,6 +17,8 @@ Step 3: python src/build_gold_set.py merge
            ready to be used as ground truth in baseline_classifier.py's
            evaluate_against_gold() and in the RQ1 comparison against the
            LLM extraction output.
+
+           This is pretty annoying if you don't have good computational power
 """
 import argparse
 import pandas as pd
