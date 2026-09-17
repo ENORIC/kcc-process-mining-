@@ -106,7 +106,7 @@ they catching different problems?
 ```bash
 python dashboard/app.py
 ```
-Open http://127.0.0.1:8050. The process map view defaults to a simple, always-interactive
+The process map view defaults to a simple, always-interactive
 directly-follows graph; a dropdown switches to the formal Inductive-Miner Petri net, also
 fully interactive (built by reusing Graphviz's own layout engine rather than a hand-rolled
 one). The live classifier demo at the bottom predicts a category and query type for
