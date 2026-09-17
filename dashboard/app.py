@@ -152,10 +152,10 @@ app.layout = html.Div(style={
                 "padding": "4px 10px", "borderRadius": "999px", "letterSpacing": "0.5px", "marginLeft": "12px"}),
         ], style={"display": "flex", "alignItems": "center"}),
         html.Div("Semantic-aware LLM process mining over India's Kisan Call Centre helpline. "
-                 "This is a single-state deep dive, not a national survey it is only scoped to Kerala "
+                 "This is a single-state deep dive, not a national survey — scoped to Kerala "
                  "on purpose, using real 2024 data, so every number here is grounded in an "
                  "actual verified call rather than a thin slice of five states at once. "
-                 "Shows where advisory calls loop, and where AI-generated answers actually "
+                 "Shows where advisory calls loop, and where KCC's own real answers actually "
                  "match what farmers asked.",
                  style={"color": COLORS["muted"], "marginTop": "6px", "fontSize": "14px", "maxWidth": "820px"}),
     ], style={"marginBottom": "22px"}),
@@ -171,7 +171,7 @@ app.layout = html.Div(style={
                      "a stand-in for \"one farmer's journey\" since the raw data has no farmer ID "
                      "(a disclosed limitation, not an oversight)."]),
             html.Li([html.B("Loop rate: "), "the share of a case's calls that repeat a category "
-                     "already seen earlier in that same case, a proxy for \"this problem kept "
+                     "already seen earlier in that same case — a proxy for \"this problem kept "
                      "coming back.\""]),
             html.Li([html.B("Duration: "), "days between a case's first and last call."]),
             html.Li([html.B("Variant: "), "the exact sequence of categories a case followed. Two "
@@ -186,14 +186,14 @@ app.layout = html.Div(style={
         html.Ul([
             html.Li([html.B(f"{n_cases_total} advisory cases"),
                      f" traced across Kerala districts and crops, with a mean repeat-call "
-                     f"('loop') rate of {loop_df['loop_rate'].mean():.0%} farmers frequently "
+                     f"('loop') rate of {loop_df['loop_rate'].mean():.0%} — farmers frequently "
                      f"call back about the same category of problem."]),
             html.Li([html.B(f"{top_loop_text}"), " show the highest loop rates among crops with "
                      "meaningful call volume, flagging where advisory quality likely needs the "
                      "most attention."]),
             rq1_finding,
             html.Li([html.B(f"{overall_mismatch_pct:.1f}% of answers flagged"),
-                     " as a lexical query-answer mismatch evidence that surface word-overlap can't "
+                     " as a lexical query-answer mismatch — evidence that surface word-overlap can't "
                      "reliably judge answer quality, motivating the semantic (NLI) approach."])
             if overall_mismatch_pct is not None else None,
         ], style={"lineHeight": "1.9", "color": COLORS["text"], "marginBottom": 0}),
@@ -503,13 +503,12 @@ def build_dfg_figure(dfg, start_activities, end_activities, node_totals):
     same discovery/trimming as the static report figure, but hoverable exact
     counts instead of a flat graphviz image.
 
-    Design choices made after actually looking at a first draft of this and
-    finding it unreadable: full names go BELOW each node (never crammed
-    inside the circle, which clipped text badly at small sizes); only the
-    call count sits inside the marker; and when both A->B and B->A exist
-    (very common here -- issue types ping-pong back and forth) the two
-    arrows are offset to either side of the straight line between them,
-    otherwise they visually merge into one thick double-ended blob.
+    Layout notes: full names go BELOW each node (never crammed inside the
+    circle, which clips text badly at small sizes); only the call count sits
+    inside the marker; and when both A->B and B->A exist (very common here --
+    issue types ping-pong back and forth) the two arrows are offset to either
+    side of the straight line between them, otherwise they visually merge
+    into one thick double-ended blob.
     """
     nodes = sorted(node_totals, key=lambda n: -node_totals[n])
     self_loops = {n: dfg.get((n, n), 0) for n in nodes}
@@ -734,16 +733,20 @@ def update_process_map(which, crops):
     # Both views are generated live from the current data every time this
     # callback fires -- no pre-rendered picture, cached or otherwise, and
     # neither is a flat image anymore: both render as hoverable Plotly
-    # figures built straight from what pm4py just discovered. Timed this at
-    # ~0.3s for the Petri net and well under that for the DFG even on the
-    # full unfiltered dataset (6570 calls), so no cached shortcut is needed.
+    # figures built straight from what pm4py just discovered.
     if not crops:
         subset = raw_df
     else:
         subset = raw_df[raw_df["Crop"].isin(crops)]
 
     n_calls = len(subset)
-    n_cases = subset["case_id"].nunique()
+    # "case(s)" here must mean the same thing the "Cases" KPI and Key Findings
+    # use everywhere else on this page: a case with 2+ calls, i.e. one that
+    # actually appears in loop_df. Counting every district+crop combination
+    # in the raw data instead (including single-call cases with no possible
+    # loop) used to give a different, larger number on this card than on the
+    # KPI tile for the exact same filter -- confusing, not just cosmetic.
+    n_cases = subset[subset["case_id"].isin(loop_df["case_id"])]["case_id"].nunique()
 
     if n_calls < 2:
         note = (f"Only {n_calls} call{'s' if n_calls != 1 else ''} for this selection — there's no "
