@@ -104,8 +104,8 @@ app.title = "KCC Process Mining"
 server = app.server  # exposed for gunicorn / hosting platforms
 
 COLORS = {
-    "bg": "#f5f6fa", "card": "#ffffff", "accent": "#4f46e5", "accent2": "#818cf8",
-    "text": "#1f2937", "muted": "#6b7280", "border": "#e5e7eb",
+    "bg": "whitesmoke", "card": "white", "accent": "slateblue", "accent2": "cornflowerblue",
+    "text": "darkslategray", "muted": "slategray", "border": "gainsboro",
 }
 
 CARD_STYLE = {
@@ -397,7 +397,7 @@ def update_dashboard(crops):
         kpi_tile(f"{mean_dur:.0f} days", "Mean case duration"),
     ]
     if pct_mismatch is not None:
-        kpis.append(kpi_tile(f"{pct_mismatch:.1f}%", "Flagged mismatches", color="#dc2626"))
+        kpis.append(kpi_tile(f"{pct_mismatch:.1f}%", "Flagged mismatches", color="crimson"))
 
     # top 15 crops by loop rate, restricted to crops with enough cases to be meaningful --
     # but if the current selection doesn't even have 5 cases in ANY crop (e.g. one small
